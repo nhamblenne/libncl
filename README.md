@@ -8,3 +8,9 @@ scripting than for interactive use.
 
 [`nclsh`](http://www.github.com/nhamblenne/nclsh) is a standalone
 executable for interpreting the `ncl` language.
+
+## Status
+
+The language is in its design phase. The available part of the
+documentation is on the
+[wiki](http://www.github.com/nhamblenne/libncl/wiki).
