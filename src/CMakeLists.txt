@@ -3,8 +3,8 @@
 # Copyright (c) 2020 Nicolas Ivan Hamblenne
 #######################################################################
 
-set(HEADERS ncl_value.h)
-add_library(ncl ncl_value.c)
+set(HEADERS ncl_value.h nvl_interp.h)
+add_library(ncl ncl_value.c ncl_interp.c)
 target_link_libraries(ncl PRIVATE ngc)
 target_include_directories(ncl INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
