@@ -54,7 +54,7 @@ int main()
     ncl_value sym2 = ncl_make_symbol(interp, sym2name);
     assert(ncl_get_type(sym2) == ncl_symbol_type);
     assert(strcmp(ncl_get_symbol_name(sym2), "foo") == 0);
-    assert(sym1 == sym2);
+    assert(sym1.repr == sym2.repr);
 
     ncl_free_interp(interp);
 }

@@ -34,8 +34,8 @@ int main()
     ncl_hash_init(&table);
     table.hash = hash;
     table.equal = equal;
-    char const* k1 = "foo";
-    char* k2 = "true";
+    char *k1 = "foo";
+    char *k2 = "true";
     ncl_hash_add(&table, k1);
     ncl_hash_add(&table, k2);
     ncl_hash_add(&table, "false");
@@ -81,6 +81,5 @@ int main()
             assert(ncl_hash_get(&table, key2) != NULL);
         }
     }
-    printf("\n");
     ncl_hash_free(&table);
 }

@@ -9,7 +9,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-typedef struct ncl_value_rec *ncl_value;
+typedef struct ncl_value {
+    uintptr_t repr;
+} ncl_value;
+
 typedef struct ncl_interp ncl_interp;
 
 typedef enum ncl_value_type {

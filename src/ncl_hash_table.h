@@ -11,8 +11,10 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#define NCL_DELETED_ENTRY ((void*)(uintptr_t)-1)
+
 typedef struct ncl_hash_table {
-    void const** content;
+    void **content;
     size_t allocated;
     size_t used;
     size_t deleted;
@@ -21,9 +23,9 @@ typedef struct ncl_hash_table {
 } ncl_hash_table;
 
 void ncl_hash_init(ncl_hash_table*);
-bool ncl_hash_add(ncl_hash_table*, void const*);
-void const* ncl_hash_get(ncl_hash_table*, void const*);
-void ncl_hash_remove(ncl_hash_table*, void const*);
+bool ncl_hash_add(ncl_hash_table*, void*);
+void* ncl_hash_get(ncl_hash_table*, void*);
+void ncl_hash_remove(ncl_hash_table*, void*);
 void ncl_hash_free(ncl_hash_table*);
 
 #endif

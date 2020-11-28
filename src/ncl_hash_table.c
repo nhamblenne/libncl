@@ -10,7 +10,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#define DELETED      ((void*)(uintptr_t)-1)
 #define NEXT(i, max) (((i)+1 == (max)) ? 0 : (i)+1)
 #define PREV(i, max) (((i) == 0) ? (max) - 1 : (i) - 1)
 
@@ -34,26 +33,26 @@ static void hash_clean_table(ncl_hash_table *table)
         ++boundary;
     }
     while (top != boundary) {
-        // DELETED elements followed by NULL can be replaced by NULL
-        while (table->content[top] == DELETED) {
+        // NCL_DELETED_ENTRY elements followed by NULL can be replaced by NULL
+        while (table->content[top] == NCL_DELETED_ENTRY) {
             assert(top != boundary);
             table->content[top] = NULL;
             --table->deleted;
             top = PREV(top, table->allocated);
         }
         if (table->content[top] != NULL) {
-            assert(table->content[top] != DELETED);
+            assert(table->content[top] != NCL_DELETED_ENTRY);
             // we are at the top of a run of non NULL elements, try to move some of them down
-            // in place of the the DELETED elements it contains
+            // in place of the the NCL_DELETED_ENTRY elements it contains
             size_t cur = top;
             bool element_moved = false;
-            while (table->content[cur] != NULL && table->content[cur] != DELETED) {
-                void const *elem = table->content[cur];
-                table->content[cur] = DELETED;
+            while (table->content[cur] != NULL && table->content[cur] != NCL_DELETED_ENTRY) {
+                void *elem = table->content[cur];
+                table->content[cur] = NCL_DELETED_ENTRY;
                 ++table->deleted;
                 --table->used;
                 ncl_hash_add(table, elem);
-                element_moved = element_moved || table->content[cur] == DELETED;
+                element_moved = element_moved || table->content[cur] == NCL_DELETED_ENTRY;
                 cur = PREV(cur, table->allocated);
             }
             // if we have moved some elements, we have to start examining at top again
@@ -86,7 +85,7 @@ static void hash_reallocate(ncl_hash_table *table, size_t needed)
             new_size += new_size/2;
         }
         new_size += new_size;
-        void const** old_content = table->content;
+        void **old_content = table->content;
         size_t old_allocated = table->allocated;
         table->content = malloc(new_size * sizeof (void*));
         memset(table->content, 0, new_size * sizeof (void*));
@@ -98,7 +97,7 @@ static void hash_reallocate(ncl_hash_table *table, size_t needed)
         table->used = 0;
         table->deleted = 0;
         for (size_t i = 0; i < old_allocated; ++i) {
-            if (old_content[i] != NULL && old_content[i] != DELETED) {
+            if (old_content[i] != NULL && old_content[i] != NCL_DELETED_ENTRY) {
                 ncl_hash_add(table, old_content[i]);
             }
         }
@@ -118,28 +117,28 @@ void ncl_hash_init(ncl_hash_table *table)
     table->hash = NULL;
 }
 
-bool ncl_hash_add(ncl_hash_table *table, const void *elem)
+bool ncl_hash_add(ncl_hash_table *table, void *elem)
 {
-    assert(elem != NULL && elem != DELETED && table != NULL && table->hash != NULL && table->equal != NULL);
+    assert(elem != NULL && elem != NCL_DELETED_ENTRY && table != NULL && table->hash != NULL && table->equal != NULL);
     uintptr_t h = table->hash(elem);
     if (table->allocated != 0) {
         uintptr_t cur = h % table->allocated;
         while (table->content[cur] != NULL) {
-            if (table->content[cur] != DELETED && table->equal(elem, table->content[cur])) {
+            if (table->content[cur] != NCL_DELETED_ENTRY && table->equal(elem, table->content[cur])) {
                 return false;
             }
             cur = NEXT(cur, table->allocated);
         }
     }
-    // if we are over 75% capacity when counting the deleted elements, clean up
+    // if we are over 75% capacity when counting the NCL_DELETED_ENTRY elements, clean up
     if (table->allocated * 3 <= (table->used + table->deleted) * 4) {
         hash_reallocate(table, table->used+1);
     }
     uintptr_t cur = h % table->allocated;
-    while (table->content[cur] != NULL && table->content[cur] != DELETED) {
+    while (table->content[cur] != NULL && table->content[cur] != NCL_DELETED_ENTRY) {
         cur = NEXT(cur, table->allocated);
     }
-    if (table->content[cur] == DELETED) {
+    if (table->content[cur] == NCL_DELETED_ENTRY) {
         --table->deleted;
     }
     ++table->used;
@@ -147,14 +146,14 @@ bool ncl_hash_add(ncl_hash_table *table, const void *elem)
     return true;
 }
 
-void const *ncl_hash_get(ncl_hash_table *table, void const *elem)
+void *ncl_hash_get(ncl_hash_table *table, void *elem)
 {
-    assert(elem != NULL && elem != DELETED && table != NULL && table->hash != NULL && table->equal != NULL);
+    assert(elem != NULL && elem != NCL_DELETED_ENTRY && table != NULL && table->hash != NULL && table->equal != NULL);
     uintptr_t h = table->hash(elem);
     if (table->allocated != 0) {
         uintptr_t cur = h % table->allocated;
         while (table->content[cur] != NULL) {
-            if (table->content[cur] != DELETED && table->equal(elem, table->content[cur])) {
+            if (table->content[cur] != NCL_DELETED_ENTRY && table->equal(elem, table->content[cur])) {
                 return table->content[cur];
             }
             cur = NEXT(cur, table->allocated);
@@ -163,19 +162,19 @@ void const *ncl_hash_get(ncl_hash_table *table, void const *elem)
     return NULL;
 }
 
-void ncl_hash_remove(ncl_hash_table *table, void const *elem)
+void ncl_hash_remove(ncl_hash_table *table, void *elem)
 {
-    assert(elem != NULL && elem != DELETED && table != NULL && table->hash != NULL && table->equal != NULL);
+    assert(elem != NULL && elem != NCL_DELETED_ENTRY && table != NULL && table->hash != NULL && table->equal != NULL);
     uintptr_t h = table->hash(elem);
     if (table->allocated != 0) {
         uintptr_t cur = h % table->allocated;
         while (table->content[cur] != NULL) {
-            if (table->content[cur] != DELETED && table->equal(elem, table->content[cur])) {
+            if (table->content[cur] != NCL_DELETED_ENTRY && table->equal(elem, table->content[cur])) {
                 --table->used;
                 if (table->content[NEXT(cur, table->allocated)] == NULL) {
                     table->content[cur] = NULL;
                 } else {
-                    table->content[cur] = DELETED;
+                    table->content[cur] = NCL_DELETED_ENTRY;
                     ++table->deleted;
                 }
                 break;
