@@ -8,3 +8,6 @@ target_link_libraries(test1 ncl)
 
 add_executable(test2 test2.c)
 target_link_libraries(test2 ncl)
+
+add_executable(test3 test3.c)
+target_link_libraries(test3 ncl)
