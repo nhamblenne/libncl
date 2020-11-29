@@ -9,15 +9,18 @@
 #include <assert.h>
 
 typedef enum CharacterClass {
-    whiteClass = 0x0001,
-    eolClass = 0x0002,
-    ctrlClass = 0x0004,
-    stringBaseClass = 0x0008U,
-    utf8Class = 0x0010,
-    letterClass = 0x0020,
-    digitClass = 0x0040,
-    idsupClass = 0x0080,
-    stringAuxClass = 0x0100,
+    /* todo: put the number in order */
+    whiteClass      = 0x0001, /* white space */
+    eolClass        = 0x0002, /* end of line */
+    ctrlClass       = 0x0004, /* control characters */
+    utf8Class       = 0x0010, /* used by utf8 */
+    letterClass     = 0x0020, /* ascii letters */
+    idSupClass      = 0x0080, /* additional characters valid in id: _ $ */
+    operClass       = 0x0200, /* operators */
+    digitClass      = 0x0040, /* digits */
+    numSupClass     = 0x0400, /* additional characters valid in numbers: _ # . */
+    stringBaseClass = 0x0008, /* valid characters in all strings */
+    stringAuxClass  = 0x0100  /* additional characters valid in non interpolated strings */
 } CharacterClass;
 
 static unsigned short charClass[] = {
@@ -26,17 +29,17 @@ static unsigned short charClass[] = {
         // DLE   DC1     DC2     DC3     DC4     NAK     SYN     ETB     CAN      EM     SUB     ESC      FS      GS      RS      US
         0x0004, 0x0004, 0x0004, 0x0004, 0x0004, 0x0004, 0x0004, 0x0004, 0x0004, 0x0004, 0x0004, 0x0004, 0x0004, 0x0004, 0x0004, 0x0004,
         // SPC    !        "      #       $       %       &       '       (       )       *       +       ,       -       .       /
-        0x0009, 0x0008, 0x0000, 0x0008, 0x0180, 0x0008, 0x0008, 0x0008, 0x0008, 0x0008, 0x0008, 0x0008, 0x0008, 0x0008, 0x0008, 0x0008,
+        0x0009, 0x0208, 0x0000, 0x0408, 0x0180, 0x0208, 0x0208, 0x0008, 0x0008, 0x0008, 0x0208, 0x0208, 0x0008, 0x0208, 0x0408, 0x0208,
         // 0      1       2       3       4       5       6       7       8       9       :       ;       <       =       >       ?
-        0x0048, 0x0048, 0x0048, 0x0048, 0x0048, 0x0048, 0x0048, 0x0048, 0x0048, 0x0048, 0x0008, 0x0008, 0x0008, 0x0008, 0x0008, 0x0008,
+        0x0048, 0x0048, 0x0048, 0x0048, 0x0048, 0x0048, 0x0048, 0x0048, 0x0048, 0x0048, 0x0008, 0x0008, 0x0208, 0x0208, 0x0208, 0x0008,
         // @      A       B       C       D       E       F       G       H       I       J       K       L       M       N       O
         0x0008, 0x0028, 0x0028, 0x0028, 0x0028, 0x0028, 0x0028, 0x0028, 0x0028, 0x0028, 0x0028, 0x0028, 0x0028, 0x0028, 0x0028, 0x0028,
         // P      Q       R       S       T       U       V       W       X       Y       Z       [       \       ]       ^       _
-        0x0028, 0x0028, 0x0028, 0x0028, 0x0028, 0x0028, 0x0028, 0x0028, 0x0028, 0x0028, 0x0028, 0x0008, 0x0000, 0x0008, 0x0008, 0x0088,
+        0x0028, 0x0028, 0x0028, 0x0028, 0x0028, 0x0028, 0x0028, 0x0028, 0x0028, 0x0028, 0x0028, 0x0008, 0x0000, 0x0008, 0x0008, 0x0488,
         // `      a       b       c       d       e       f       g       h       i       j       k       l       m       n       o
         0x0008, 0x0028, 0x0028, 0x0028, 0x0028, 0x0028, 0x0028, 0x0028, 0x0028, 0x0028, 0x0028, 0x0028, 0x0028, 0x0028, 0x0028, 0x0028,
         // p      q       r       s       t       u       v       w       x       y       z       {       |       }       ~      DEL
-        0x0028, 0x0028, 0x0028, 0x0028, 0x0028, 0x0028, 0x0028, 0x0028, 0x0028, 0x0028, 0x0028, 0x0008, 0x0008, 0x0008, 0x0008, 0x0004,
+        0x0028, 0x0028, 0x0028, 0x0028, 0x0028, 0x0028, 0x0028, 0x0028, 0x0028, 0x0028, 0x0028, 0x0008, 0x0208, 0x0008, 0x0208, 0x0004,
 
         0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x0010,
         0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x0010,
@@ -112,7 +115,6 @@ ncl_lexer_result ncl_lex(char const* cur, char const* end, bool skipEOL)
                 ++cur;
             }
             goto start;
-            break;
 
         /* identifiers */
         case 'A': case 'B': case 'C': case 'D': case 'E': case 'F': case 'G': case 'H':
@@ -124,7 +126,7 @@ ncl_lexer_result ncl_lex(char const* cur, char const* end, bool skipEOL)
         case 'q': case 'r': case 's': case 't': case 'u': case 'v': case 'w': case 'x':
         case 'y': case 'z':
         case '$': case '_':
-            while (cur != end && HAS_CLASS(*cur, letterClass|idsupClass|digitClass)) {
+            while (cur != end && HAS_CLASS(*cur, letterClass|idSupClass|digitClass)) {
                 ++cur;
             }
             result.end = cur;
@@ -165,19 +167,92 @@ ncl_lexer_result ncl_lex(char const* cur, char const* end, bool skipEOL)
             result.end = cur;
             break;
 
-        case '!': case '%': case '&': case '\'':
-        case '(': case ')': case '*': case '+': case ',':  case '-': case '.': case '/':
-        case '0': case '1': case '2': case '3': case '4':  case '5': case '6': case '7':
-        case '8': case '9': case ':': case ';': case '<':  case '=': case '>': case '?':
-        case '@':
-        case '[': case '\\': case ']': case '^':
-        case '`': case '{': case '|':  case '}': case '~':
+        /* numbers */
+        case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7':
+        case '8': case '9':
+            do {
+                while (cur != end && HAS_CLASS(*cur, digitClass | letterClass | numSupClass)) {
+                    ++cur;
+                }
+                if ((*cur == '+' || *cur == '-') && (cur[-1] == 'e' || cur[-1] == 'E' || cur[-1] == 'p' || cur[-1] == 'P')) {
+                    ++cur;
+                }
+            } while (cur != end && HAS_CLASS(*cur, digitClass | letterClass | numSupClass));
+            result.end = cur;
+            result.kind = ncl_integer_tk;
+            break;
 
-        case 0x09: case 0x0B: case 0x0C:
-        case ' ':
+        /* operators */
+        case '!': case '%': case '&': case '*': case '+': case '-': case '/': case '<':
+        case '=': case '>': case '|': case '~':
+            while (cur != end && HAS_CLASS(*cur, operClass)) {
+                ++cur;
+            }
+            result.end = cur;
+            result.kind = ncl_operator_tk;
+            break;
+
+        /* punctuations */
+        case '(':
+            if (cur != end && *cur == ':') {
+                ++cur;
+                result.kind = ncl_reserved_tk;
+            } else {
+                result.kind = ncl_reserved_tk;
+            }
+            result.end = cur;
+            break;
+
+        case ':':
+            if (cur != end && *cur == ')') {
+                ++cur;
+                result.kind = ncl_reserved_tk;
+            } else if (cur != end && *cur == '=') {
+                ++cur;
+                result.kind = ncl_reserved_tk;
+            } else if (cur != end && *cur == ']') {
+                ++cur;
+                result.kind = ncl_reserved_tk;
+            } else if (cur != end && *cur == '}') {
+                ++cur;
+                result.kind = ncl_reserved_tk;
+            } else {
+                result.kind = ncl_reserved_tk;
+            }
+            result.end = cur;
+            break;
+
+        case '[':
+            if (cur != end && *cur == ':') {
+                ++cur;
+                result.kind = ncl_reserved_tk;
+            } else {
+                result.kind = ncl_reserved_tk;
+            }
+            result.end = cur;
+            break;
+
+        case '{':
+            if (cur != end && *cur == ':') {
+                ++cur;
+                result.kind = ncl_reserved_tk;
+            } else {
+                result.kind = ncl_reserved_tk;
+            }
+            result.end = cur;
+            break;
+
+        case '\'': case ')': case ',': case '.': case ';': case '?':  case '@': case '\\':
+        case ']':  case '^': case '`': case '}':
+            result.end = cur;
+            result.kind = ncl_reserved_tk;
+            break;
+
+        /* should not happen */
+        case 0x09: case 0x0B: case 0x0C: case ' ':
         default:
             assert(0);
-            break;
+            goto start;
     }
     return result;
 };

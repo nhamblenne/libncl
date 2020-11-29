@@ -12,7 +12,8 @@ int main()
 {
     char const text[] = " id1 id2 \"string1\" \"string \\\" string\"\n"
                         "# comment\n"
-                        "id56$__67 $\"istring$( )$djfkl$( )$dfjlk\"";
+                        "id56$__67 $\"istring$( )$djfkl$( )$dfjlk\" 123 123.34#123E+65\n"
+                        "+ - +- (: :) [ ] [:";
     ncl_lexer_result lex;
     char const *cur = text;
     char const *end = text + sizeof(text);
