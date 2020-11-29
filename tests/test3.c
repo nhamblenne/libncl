@@ -18,12 +18,14 @@ int main()
                         "# comment\n"
                         "id56$__67 $\"istring$( )$djfkl$( )$dfjlk\" 123 123.34#123E+65\n"
                         "+ - +- (: :) [ ] [:\n"
-                        "\"Unterminated string";
+                        "\"Unterminated string\n"
+                        " A\"XX\" 0ABC#16 0AB.DFE#16E+14\n"
+                        "ABC#16\n";
     ncl_token_kind tk;
     ncl_lexer lexer;
     lexer.buffer_start = text;
     lexer.buffer_pos = text;
-    lexer.buffer_end = text + sizeof(text);
+    lexer.buffer_end = text + sizeof(text) - 1;
     lexer.error_func = error_func;
     while (tk = ncl_lex(&lexer,true),  tk != ncl_eof_tk) {
         printf("%d, |%.*s|\n", tk, (int)(lexer.current_end - lexer.current_start), lexer.current_start);
