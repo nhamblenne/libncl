@@ -7,6 +7,7 @@
 #include "ncl_lexer.h"
 
 #include <assert.h>
+#include <stdio.h>
 
 typedef enum CharacterClass {
     /* todo: put the number in order */
@@ -53,9 +54,19 @@ static unsigned short charClass[] = {
 
 #define HAS_CLASS(c, cl) ((charClass[(unsigned char)(c)] & (unsigned)(cl)) != 0)
 
-ncl_lexer_result ncl_lex(char const* cur, char const* end, bool skipEOL)
+void default_error_func(ncl_lexer *lexer, char const *msg)
 {
-    start:
+    printf("Error: %s at %.*s\n", msg, (int)(lexer->current_end-lexer->current_start), lexer->current_start);
+}
+
+ncl_token_kind ncl_lex(ncl_lexer *lexer, bool skipEOL)
+{
+    if (lexer->error_func == NULL) {
+        lexer->error_func = default_error_func;
+    }
+    start:;
+    char const *cur = lexer->buffer_pos;
+    char const *end = lexer->buffer_end;
     do {
         while (cur != end && HAS_CLASS(*cur, whiteClass)) {
             ++cur;
@@ -65,21 +76,21 @@ ncl_lexer_result ncl_lex(char const* cur, char const* end, bool skipEOL)
         }
     } while (cur != end && HAS_CLASS(*cur, whiteClass));
 
-    ncl_lexer_result result;
-    result.start = cur;
+    lexer->current_start = cur;
     if (cur == end) {
-        result.end = cur;
-        result.kind = ncl_eof_tk;
-        return result;
+        lexer->current_end = cur;
+        lexer->current_kind = ncl_eof_tk;
+        return lexer->current_kind;
     }
 
     if (HAS_CLASS(*cur, utf8Class)) {
         while (cur != end && HAS_CLASS(*cur, utf8Class)) {
             ++cur;
         }
-        result.end = cur;
-        result.kind = ncl_error_tk;
-        return result;
+        lexer->current_end = cur;
+        lexer->current_kind = ncl_error_tk;
+        lexer->error_func(lexer, "UTF-8 character outside of string and comment");
+        return lexer->current_kind;
     }
     switch (*cur++) {
         /* control characters, excepted those which are white space or eol */
@@ -88,8 +99,8 @@ ncl_lexer_result ncl_lex(char const* cur, char const* end, bool skipEOL)
         case 0x10: case 0x11: case 0x12: case 0x13: case 0x14: case 0x15: case 0x16: case 0x17:
         case 0x18: case 0x19: case 0x1A: case 0x1B: case 0x1C: case 0x1D: case 0x1E: case 0x1F:
         case 0x7F:
-            result.end = cur;
-            result.kind = ncl_error_tk;
+            lexer->current_kind = ncl_error_tk;
+            lexer->error_func(lexer, "Invalid control character");
             break;
 
         /* end of line */
@@ -97,16 +108,14 @@ ncl_lexer_result ncl_lex(char const* cur, char const* end, bool skipEOL)
             if (cur != end && *cur == 0x0D) {
                 ++cur;
             }
-            result.end = cur;
-            result.kind = ncl_eol_tk;
+            lexer->current_kind = ncl_eol_tk;
             break;
 
         case 0x0D:
             if (cur != end && *cur == 0x0A) {
                 ++cur;
             }
-            result.end = cur;
-            result.kind = ncl_eol_tk;
+            lexer->current_kind = ncl_eol_tk;
             break;
 
         /* comments */
@@ -114,6 +123,7 @@ ncl_lexer_result ncl_lex(char const* cur, char const* end, bool skipEOL)
             while (cur != end && *cur != 0x0A && *cur != 0x0D) {
                 ++cur;
             }
+            lexer->buffer_pos = cur;
             goto start;
 
         /* identifiers */
@@ -129,12 +139,11 @@ ncl_lexer_result ncl_lex(char const* cur, char const* end, bool skipEOL)
             while (cur != end && HAS_CLASS(*cur, letterClass|idSupClass|digitClass)) {
                 ++cur;
             }
-            result.end = cur;
-            result.kind = ncl_id_tk;
+            lexer->current_kind = ncl_id_tk;
             break;
 
         case '"':
-            result.kind = ncl_string_tk;
+            lexer->current_kind = ncl_string_tk;
             do {
                 while (cur != end && HAS_CLASS(*cur, stringBaseClass|stringAuxClass)) {
                     ++cur;
@@ -152,7 +161,7 @@ ncl_lexer_result ncl_lex(char const* cur, char const* end, bool skipEOL)
                             ++cur;
                         }
                     } else if (*cur != '"') {
-                        result.kind = ncl_error_tk;
+                        lexer->current_kind = ncl_error_tk;
                         if (*cur != '"' && *cur != 0x0A && *cur != 0x0D) {
                             ++cur;
                         }
@@ -162,9 +171,11 @@ ncl_lexer_result ncl_lex(char const* cur, char const* end, bool skipEOL)
             if (cur != end && *cur == '"') {
                 ++cur;
             } else {
-                result.kind = ncl_error_tk;
+                lexer->current_kind = ncl_error_tk;
             }
-            result.end = cur;
+            if (lexer->current_kind == ncl_error_tk) {
+                lexer->error_func(lexer, "Invalid string");
+            }
             break;
 
         /* numbers */
@@ -178,8 +189,7 @@ ncl_lexer_result ncl_lex(char const* cur, char const* end, bool skipEOL)
                     ++cur;
                 }
             } while (cur != end && HAS_CLASS(*cur, digitClass | letterClass | numSupClass));
-            result.end = cur;
-            result.kind = ncl_integer_tk;
+            lexer->current_kind = ncl_number_tk;
             break;
 
         /* operators */
@@ -188,64 +198,58 @@ ncl_lexer_result ncl_lex(char const* cur, char const* end, bool skipEOL)
             while (cur != end && HAS_CLASS(*cur, operClass)) {
                 ++cur;
             }
-            result.end = cur;
-            result.kind = ncl_operator_tk;
+            lexer->current_kind = ncl_operator_tk;
             break;
 
         /* punctuations */
         case '(':
             if (cur != end && *cur == ':') {
                 ++cur;
-                result.kind = ncl_reserved_tk;
+                lexer->current_kind = ncl_reserved_tk;
             } else {
-                result.kind = ncl_reserved_tk;
+                lexer->current_kind = ncl_reserved_tk;
             }
-            result.end = cur;
             break;
 
         case ':':
             if (cur != end && *cur == ')') {
                 ++cur;
-                result.kind = ncl_reserved_tk;
+                lexer->current_kind = ncl_reserved_tk;
             } else if (cur != end && *cur == '=') {
                 ++cur;
-                result.kind = ncl_reserved_tk;
+                lexer->current_kind = ncl_reserved_tk;
             } else if (cur != end && *cur == ']') {
                 ++cur;
-                result.kind = ncl_reserved_tk;
+                lexer->current_kind = ncl_reserved_tk;
             } else if (cur != end && *cur == '}') {
                 ++cur;
-                result.kind = ncl_reserved_tk;
+                lexer->current_kind = ncl_reserved_tk;
             } else {
-                result.kind = ncl_reserved_tk;
+                lexer->current_kind = ncl_reserved_tk;
             }
-            result.end = cur;
             break;
 
         case '[':
             if (cur != end && *cur == ':') {
                 ++cur;
-                result.kind = ncl_reserved_tk;
+                lexer->current_kind = ncl_reserved_tk;
             } else {
-                result.kind = ncl_reserved_tk;
+                lexer->current_kind = ncl_reserved_tk;
             }
-            result.end = cur;
             break;
 
         case '{':
             if (cur != end && *cur == ':') {
                 ++cur;
-                result.kind = ncl_reserved_tk;
+                lexer->current_kind = ncl_reserved_tk;
             } else {
-                result.kind = ncl_reserved_tk;
+                lexer->current_kind = ncl_reserved_tk;
             }
-            result.end = cur;
             break;
 
         case '\'': case ')': case ',': case '.': case ';': case '?':  case '@': case '\\':
         case ']':  case '^': case '`': case '}':
-            result.end = cur;
-            result.kind = ncl_reserved_tk;
+            lexer->current_kind = ncl_reserved_tk;
             break;
 
         /* should not happen */
@@ -254,5 +258,7 @@ ncl_lexer_result ncl_lex(char const* cur, char const* end, bool skipEOL)
             assert(0);
             goto start;
     }
-    return result;
-};
+    lexer->current_end = cur;
+    lexer->buffer_pos = cur;
+    return lexer->current_kind;
+}

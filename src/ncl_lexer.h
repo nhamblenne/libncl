@@ -16,8 +16,7 @@ typedef enum ncl_token_kind {
     ncl_eol_tk,
     ncl_id_tk,
     ncl_operator_tk,
-    ncl_punctuation_tk,
-    ncl_integer_tk,
+    ncl_number_tk,
     ncl_string_tk,
     ncl_istring_tk,
     ncl_istring_start_tk,
@@ -25,13 +24,20 @@ typedef enum ncl_token_kind {
     ncl_istring_end_tk
 } ncl_token_kind;
 
-typedef struct ncl_lexer_result
-{
-    ncl_token_kind kind;
-    char const *start;
-    char const *end;
-} ncl_lexer_result;
+typedef struct ncl_lexer ncl_lexer;
+typedef void (*ncl_lexer_error_func)(ncl_lexer*, char const*);
 
-ncl_lexer_result ncl_lex(char const* cur, char const* end, bool skipEOL);
+struct ncl_lexer
+{
+    ncl_token_kind current_kind;
+    char const *current_start;
+    char const *current_end;
+    char const *buffer_start;
+    char const *buffer_pos;
+    char const *buffer_end;
+    ncl_lexer_error_func error_func;
+};
+
+ncl_token_kind ncl_lex(ncl_lexer*, bool skipEOL);
 
 #endif
