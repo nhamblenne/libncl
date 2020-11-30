@@ -19,8 +19,11 @@ int main()
                         "id56$__67 $\"istring$( )$djfkl$( )$dfjlk\" 123 123.34#123E+65\n"
                         "+ - +- (: :) [ ] [:\n"
                         "\"Unterminated string\n"
-                        " A\"XX\" 0ABC#16 0AB.DFE#16E+14\n"
-                        "ABC#16\n";
+                        " A\"XX\" \"XX\"A 0ABC#16 0AB.DFE#16E+14\n"
+                        "ABC#16\n"
+                        "$\"String\" $\"String$( )$string$( )$string\"\n"
+                        "$\"string\"A )$string\"X\n"
+                        "\"string with $\" $\"istring with $\" $\"istring with $ $( )$istring with $ $( )$ istring with $\"\n";
     ncl_token_kind tk;
     ncl_lexer lexer;
     lexer.buffer_start = text;
