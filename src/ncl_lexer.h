@@ -35,6 +35,7 @@ struct ncl_lexer
     char const *buffer_start;
     char const *buffer_pos;
     char const *buffer_end;
+    int line_number;
     ncl_lexer_error_func error_func;
 };
 

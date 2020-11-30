@@ -9,7 +9,26 @@
 
 void error_func(ncl_lexer *lexer, char const *msg)
 {
-    printf("Error: %s at %.*s\n", msg, (int)(lexer->current_end-lexer->current_start), lexer->current_start);
+    printf("\nError line %d:\n", lexer->line_number);
+    char const* sol = lexer->current_start;
+    while (sol != lexer->buffer_start && sol[-1] != 0x0A && sol[-1] != 0x0D) {
+        --sol;
+    }
+    for (char const* cur = sol; *cur != 0x0A && *cur != 0x0D; ++cur) {
+        putchar(*cur);
+    }
+    putchar('\n');
+    for (char const* cur = sol; cur != lexer->current_start; ++cur) {
+        putchar(*cur == '\t' ? '\t' : ' ');
+    }
+    putchar('^');
+    for (char const* cur = lexer->current_start+1; cur < lexer->current_end-1; ++cur) {
+        putchar('~');
+    }
+    if (lexer->current_end > lexer->current_start+1) {
+        putchar('^');
+    }
+    printf("\n%s\n", msg);
 }
 
 int main()
@@ -18,7 +37,7 @@ int main()
                         "# comment\n"
                         "id56$__67 $\"istring$( )$djfkl$( )$dfjlk\" 123 123.34#123E+65\n"
                         "+ - +- (: :) [ ] [:\n"
-                        "\"Unterminated string\n"
+                        "\"Unterminated string  ))) \t\n"
                         " A\"XX\" \"XX\"A 0ABC#16 0AB.DFE#16E+14\n"
                         "ABC#16\n"
                         "$\"String\" $\"String$( )$string$( )$string\"\n"
@@ -29,6 +48,7 @@ int main()
     lexer.buffer_start = text;
     lexer.buffer_pos = text;
     lexer.buffer_end = text + sizeof(text) - 1;
+    lexer.line_number = 1;
     lexer.error_func = error_func;
     while (tk = ncl_lex(&lexer,true),  tk != ncl_eof_tk) {
         printf("%d, |%.*s|\n", tk, (int)(lexer.current_end - lexer.current_start), lexer.current_start);
