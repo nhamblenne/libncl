@@ -59,13 +59,14 @@ static void default_error_func(ncl_lexer *lexer, char const *msg)
 static char const *terminate_string(ncl_lexer *lexer, char const *cur, ncl_token_kind end_tk)
 {
     char const *end = lexer->buffer_end;
+start:
     for (;;) {
         while (cur != end && HAS_CLASS(*cur, stringBaseClass)) {
             ++cur;
         }
         if (cur == end || *cur == 0x0A || *cur == 0x0D) {
             /* non terminated string, backup white spaces, closing parenthesis
-             * and the white space again for better error reporting. As the
+             * and then white spaces again for better error reporting. As the
              * string started with a character we won't back up, we don't
              * have to check for underflowing the buffer */
             lexer->current_kind = ncl_error_tk;
@@ -80,7 +81,7 @@ static char const *terminate_string(ncl_lexer *lexer, char const *cur, ncl_token
             }
             break;
         } else if (*cur == '"') {
-            /* correctly terminated string, check if there is an invalid suffix */
+            /* correctly terminated string, check if there is a (currently) invalid suffix */
             ++cur;
             if (cur != end && HAS_CLASS(*cur, letterClass | idSupClass | digitClass)) {
                 do {
@@ -88,27 +89,35 @@ static char const *terminate_string(ncl_lexer *lexer, char const *cur, ncl_token
                 } while (cur != end && HAS_CLASS(*cur, letterClass | idSupClass | digitClass));
                 lexer->current_kind = ncl_error_tk;
             }
-            break;
+            /* check that we haven't another string abutted */
+            if (cur == end || *cur != '"') {
+                break;
+            } else {
+                ++cur;
+                lexer->current_kind = ncl_error_tk;
+            }
         } else if (*cur == '\\') {
-            /* todo: validate other escape sequence */
+            /* todo: validate other escape sequences */
             ++cur;
             if (cur != end && *cur == '"') {
                 ++cur;
             }
         } else if (*cur == '$') {
             ++cur;
-            if (cur != end && *cur == '(') {
-                ++cur;
-                if (lexer->current_kind != ncl_error_tk) {
-                    lexer->current_kind = end_tk;
+            if (end_tk != ncl_string_tk) {
+                if (cur != end && *cur == '(') {
+                    ++cur;
+                    if (lexer->current_kind != ncl_error_tk) {
+                        lexer->current_kind = end_tk;
+                    }
+                    break;
+                } else {
+                    lexer->current_kind = ncl_error_tk;
                 }
-                break;
-            } else if (end_tk != ncl_string_tk) {
-                lexer->current_kind = ncl_error_tk;
             }
-        } else if (*cur > 0x7F) {
+        } else if (HAS_CLASS(*cur, utf8Class)) {
             /* todo: validate UTF-8 encoding, that's why it's outside the happy loop */
-            while (cur != end && *cur > 0x7F) {
+            while (cur != end && HAS_CLASS(*cur, utf8Class)) {
                 ++cur;
             }
         } else {
@@ -124,17 +133,16 @@ static char const *terminate_string(ncl_lexer *lexer, char const *cur, ncl_token
     return cur;
 }
 
-static char const *append_number(ncl_lexer *lexer, char const *cur)
+static char const *accept_if_preceded_by_white(ncl_lexer *lexer, char const *cur, ncl_token_kind kind)
 {
-    char const *end = lexer->buffer_end;
-    do {
-        while (cur != end && HAS_CLASS(*cur, digitClass | letterClass | numSupClass)) {
-            ++cur;
-        }
-        if ((*cur == '+' || *cur == '-') && (cur[-1] == 'e' || cur[-1] == 'E')) {
-            ++cur;
-        }
-    } while (cur != end && HAS_CLASS(*cur, digitClass | letterClass | numSupClass));
+    ++cur;
+    lexer->current_kind = kind;
+    if (lexer->buffer_start != lexer->current_start
+        && !HAS_CLASS(lexer->current_start[-1], whiteClass | eolClass))
+    {
+        lexer->current_end = cur;
+        lexer->error_func(lexer, "Comment must be preceded by white space");
+    }
     return cur;
 }
 
@@ -203,17 +211,24 @@ start:;
 
         /* comments */
         case '#':
-        {
-            bool has_error = lexer->buffer_start != cur - 1 && !HAS_CLASS(cur[-2], whiteClass | eolClass);
-            while (cur != end && !HAS_CLASS(*cur, eolClass)) {
-                ++cur;
+            if (cur != end && *cur == ')') {
+                cur = accept_if_preceded_by_white(lexer, cur, ncl_reserved_tk);
+            } else if (cur != end && *cur == ']') {
+                cur = accept_if_preceded_by_white(lexer, cur, ncl_reserved_tk);
+            } else if (cur != end && *cur == '}') {
+                cur = accept_if_preceded_by_white(lexer, cur, ncl_reserved_tk);
+            } else {
+                while (cur != end && !HAS_CLASS(*cur, eolClass)) {
+                    ++cur;
+                }
+                if (lexer->buffer_start != lexer->current_start
+                    && !HAS_CLASS(lexer->current_start[-1], whiteClass | eolClass))
+                {
+                    lexer->current_end = cur;
+                    lexer->error_func(lexer, "Comment must be preceded by white space");
+                }
+                goto start;
             }
-            if (has_error) {
-                lexer->current_end = cur;
-                lexer->error_func(lexer, "Comment must be preceded by white space");
-            }
-            goto start;
-        }
 
         /* identifiers */
         case 'A': case 'B': case 'C': case 'D': case 'E': case 'F': case 'G': case 'H':
@@ -250,7 +265,18 @@ start:;
         case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7':
         case '8': case '9':
             lexer->current_kind = ncl_number_tk;
-            cur = append_number(lexer, cur);
+            do {
+                while (cur != end && HAS_CLASS(*cur, digitClass | letterClass | numSupClass)) {
+                    ++cur;
+                }
+                if ((*cur == '+' || *cur == '-') && (cur[-1] == 'e' || cur[-1] == 'E')) {
+                    ++cur;
+                }
+            } while (cur != end && HAS_CLASS(*cur, digitClass | letterClass | numSupClass));
+            if (cur != end && *cur == '"') {
+                lexer->current_kind = ncl_error_tk;
+                cur = terminate_string(lexer, cur + 1, ncl_istring_start_tk);
+            }
             break;
 
         /* operators */
@@ -265,6 +291,9 @@ start:;
         /* punctuations */
         case '(':
             if (cur != end && *cur == ':') {
+                ++cur;
+                lexer->current_kind = ncl_reserved_tk;
+            } else if (cur != end && *cur == '#') {
                 ++cur;
                 lexer->current_kind = ncl_reserved_tk;
             } else {
@@ -303,6 +332,9 @@ start:;
             if (cur != end && *cur == ':') {
                 ++cur;
                 lexer->current_kind = ncl_reserved_tk;
+            } else if (cur != end && *cur == '#') {
+                ++cur;
+                lexer->current_kind = ncl_reserved_tk;
             } else {
                 lexer->current_kind = ncl_reserved_tk;
             }
@@ -310,6 +342,9 @@ start:;
 
         case '{':
             if (cur != end && *cur == ':') {
+                ++cur;
+                lexer->current_kind = ncl_reserved_tk;
+            } else if (cur != end && *cur == '#') {
                 ++cur;
                 lexer->current_kind = ncl_reserved_tk;
             } else {
