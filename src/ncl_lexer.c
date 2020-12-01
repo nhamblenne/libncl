@@ -294,8 +294,21 @@ start:;
                 ++cur;
                 lexer->current_kind = ncl_reserved_tk;
             } else if (cur != end && *cur == '#') {
-                ++cur;
-                lexer->current_kind = ncl_reserved_tk;
+                do {
+                    do {
+                        ++cur;
+                    } while (cur != end && *cur != '#' && !HAS_CLASS(*cur, eolClass));
+                    if (cur != end && *cur == '#') {
+                        ++cur;
+                    }
+                } while (cur != end && *cur != ')' && !HAS_CLASS(*cur, eolClass));
+                if (cur != end && *cur == ')') {
+                    ++cur;
+                } else {
+                    lexer->current_end = cur;
+                    lexer->error_func(lexer, "Comment started bu (# may not span several lines");
+                }
+                goto start;
             } else {
                 lexer->current_kind = ncl_reserved_tk;
             }
