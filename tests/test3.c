@@ -44,7 +44,9 @@ int main()
                         "$\"String\" $\"String$( )$string$( )$string\"\n"
                         "$\"string\"A )$string\"X\n"
                         "\"string with $\" $\"istring with $\" $\"istring with $ $( )$istring with $ $( )$ istring with $\"\n"
-                        "\"$(\"\n 12.45#ABE+5\"Foo\"";
+                        "\"$(\"\n 12.45#ABE+5\"Foo\""
+                        "\\\\ string\n"
+                        "\\\\ string\n";
     ncl_token_kind tk;
     ncl_lexer lexer;
     lexer.buffer_start = text;

@@ -365,7 +365,18 @@ start:;
             }
             break;
 
-        case '\'': case ',': case '.': case ';': case '?':  case '@': case '\\':
+        case '\\':
+            if (cur != end && *cur == '\\') {
+                do {
+                    ++cur;
+                } while (cur != end && !HAS_CLASS(*cur, eolClass));
+                lexer->current_kind = ncl_zstring_tk;
+            } else {
+                lexer->current_kind = ncl_reserved_tk;
+            }
+            break;
+
+        case '\'': case ',': case '.': case ';': case '?':  case '@':
         case ']':  case '^': case '`': case '}':
             lexer->current_kind = ncl_reserved_tk;
             break;
