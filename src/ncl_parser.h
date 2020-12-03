@@ -7,13 +7,38 @@
  * =======================================================================
  */
 
-typedef struct ncl_node *ncl_node;
-typedef enum ncl_parse_result {
-    ncl_parse_error,
+typedef struct ncl_node ncl_node;
+
+typedef enum ncl_node_kind {
+    ncl_error_node,
+    ncl_statements_node,
+} ncl_node_kind;
+
+typedef struct ncl_node_statements {
+    ncl_node *head;
+    ncl_node *tail;
+} ncl_node_statements;
+
+struct ncl_node {
+    ncl_node_kind kind;
+    union {
+        ncl_node_statements statements;
+    };
+};
+
+typedef enum ncl_parse_result_enum {
+    ncl_parse_ok,
     ncl_parse_incomplete,
-    ncl_parse_ok
+    ncl_parse_error,
+    ncl_parse_none,
+} ncl_parse_result_enum;
+
+typedef struct ncl_parse_result {
+    ncl_parse_result_enum error;
+    ncl_node *top;
 } ncl_parse_result;
 
 ncl_parse_result ncl_parse(char const*);
+void ncl_free_node(ncl_node*);
 
 #endif

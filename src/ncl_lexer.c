@@ -59,7 +59,6 @@ static void default_error_func(ncl_lexer *lexer, char const *msg)
 static char const *terminate_string(ncl_lexer *lexer, char const *cur, ncl_token_kind end_tk)
 {
     char const *end = lexer->buffer_end;
-start:
     for (;;) {
         while (cur != end && HAS_CLASS(*cur, stringBaseClass)) {
             ++cur;
