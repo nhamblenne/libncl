@@ -375,7 +375,11 @@ start:;
             }
             break;
 
-        case '\'': case ',': case '.': case ';': case '?':  case '@':
+        case ';':
+            lexer->current_kind = ncl_semicolon_tk;
+            break;
+
+        case '\'': case ',': case '.': case '?':  case '@':
         case ']':  case '^': case '`': case '}':
             lexer->current_kind = ncl_reserved_tk;
             break;

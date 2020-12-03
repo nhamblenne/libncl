@@ -22,7 +22,8 @@ typedef enum ncl_token_kind {
     ncl_istring_start_tk,
     ncl_istring_cont_tk,
     ncl_istring_end_tk,
-    ncl_zstring_tk
+    ncl_zstring_tk,
+    ncl_semicolon_tk,
 } ncl_token_kind;
 
 typedef struct ncl_lexer ncl_lexer;

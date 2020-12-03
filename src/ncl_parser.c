@@ -36,19 +36,20 @@ static void error_func(ncl_lexer *lexer, char const *msg)
     printf("\n%s\n", msg);
 }
 
-static void skip_to(ncl_lexer *lexer, ncl_token_kind sync_tk)
+static void skip_to(ncl_lexer *lexer, ncl_token_kind sync1, ncl_token_kind sync2)
 {
-    while (lexer->current_kind != sync_tk
+    while (lexer->current_kind != sync1
+           && lexer->current_kind != sync2
            && lexer->current_kind != ncl_eof_tk)
     {
-        ncl_lex(lexer, sync_tk != ncl_eol_tk);
+        ncl_lex(lexer, sync1 != ncl_eol_tk);
     }
 }
 
 static ncl_parse_result parse_expression(ncl_lexer *lexer)
 {
     lexer->error_func(lexer, "Not a valid expression");
-    skip_to(lexer, ncl_eol_tk);
+    skip_to(lexer, ncl_eol_tk, ncl_semicolon_tk);
     ncl_node *result = malloc(sizeof(ncl_node));
     result->kind = ncl_error_node;
     return (ncl_parse_result){ .error = ncl_parse_error, .top = result };
@@ -57,12 +58,17 @@ static ncl_parse_result parse_expression(ncl_lexer *lexer)
 static ncl_parse_result parse_statement(ncl_lexer *lexer)
 {
     ncl_parse_result result = parse_expression(lexer);
-    if (lexer->current_kind != ncl_eol_tk && lexer->current_kind != ncl_eof_tk) {
+    if (lexer->current_kind != ncl_eol_tk
+        && lexer->current_kind != ncl_semicolon_tk
+        && lexer->current_kind != ncl_eof_tk)
+    {
         result.error = ncl_parse_error;
         lexer->error_func(lexer, "Trailing data after statement");
-        skip_to(lexer, ncl_eol_tk);
+        skip_to(lexer, ncl_eol_tk, ncl_semicolon_tk);
     }
-    if (lexer->current_kind == ncl_eol_tk) {
+    if (lexer->current_kind == ncl_eol_tk
+        || lexer->current_kind == ncl_semicolon_tk)
+    {
         ncl_lex(lexer, true);
     }
     return result;
