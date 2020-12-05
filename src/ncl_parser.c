@@ -15,6 +15,8 @@
 #include "ncl_symset.h"
 
 static bool dynamic_initialization_done = false;
+static ncl_symset basic_expression_starter_set;
+static ncl_symset unary_call_expression_starter_set;
 static ncl_symset expression_starter_set;
 static ncl_symset statement_starter_set;
 static ncl_symset statement_finalizer_set;
@@ -23,7 +25,11 @@ static ncl_symset statements_follower_set;
 
 static void dynamic_initialization()
 {
-    expression_starter_set = ncl_symset_add_elem(ncl_init_symset(), ncl_number_tk);
+    basic_expression_starter_set = ncl_symset_add_elem(ncl_init_symset(), ncl_number_tk);
+
+    unary_call_expression_starter_set = basic_expression_starter_set;
+
+    expression_starter_set = unary_call_expression_starter_set;
 
     statement_starter_set = expression_starter_set;
     statement_finalizer_set = ncl_symset_add_elem(ncl_init_symset(), ncl_eol_tk);
@@ -73,18 +79,41 @@ static void skip_to(ncl_lexer *lexer, struct ncl_symset sync)
     }
 }
 
+static ncl_parse_result parse_basic_expression(ncl_lexer *lexer, ncl_symset valid, ncl_symset sync)
+{
+    assert(ncl_symset_has_elem(basic_expression_starter_set, lexer->current_kind));
+    ncl_parse_result result;
+    result.error = ncl_parse_error;
+    result.top = NULL;
+    switch (lexer->current_kind) {
+        case ncl_number_tk:
+            result.top = malloc(sizeof(ncl_node));
+            result.top->kind = ncl_number_node;
+            result.top->number.start = lexer->current_start;
+            result.top->number.end = lexer->current_end;
+            break;
+    }
+    ncl_lex(lexer, !ncl_symset_has_elem(valid, ncl_eol_tk));
+    if (!ncl_symset_has_elem(valid, lexer->current_kind)) {
+        lexer->error_func(lexer, "unexpected token");
+        skip_to(lexer, sync);
+    }
+    return result;
+}
+
+static ncl_parse_result parse_unary_call_expression(ncl_lexer *lexer, ncl_symset valid, ncl_symset sync)
+{
+    assert(ncl_symset_has_elem(unary_call_expression_starter_set, lexer->current_kind));
+    return parse_basic_expression(lexer, valid, sync);
+}
+
 static ncl_parse_result parse_expression(ncl_lexer *lexer, ncl_symset valid, ncl_symset sync)
 {
     assert(ncl_symset_has_elem(expression_starter_set, lexer->current_kind));
-    lexer->error_func(lexer, "Not a valid expression");
-    ncl_lex(lexer, !ncl_symset_has_elem(sync, ncl_eol_tk));
-    skip_to(lexer, sync);
-    ncl_node *result = malloc(sizeof(ncl_node));
-    result->kind = ncl_error_node;
-    return (ncl_parse_result){ .error = ncl_parse_error, .top = result };
+    return parse_unary_call_expression(lexer, valid, sync);
 }
 
-static ncl_parse_result parse_statement(ncl_lexer *lexer, ncl_symset valid, ncl_symset sync)
+static ncl_parse_result parse_statement(ncl_lexer *lexer, ncl_symset valid, ncl_symset sync, char const* msg)
 {
     assert(ncl_symset_has_elem(statement_starter_set, lexer->current_kind));
     ncl_symset next_sync = ncl_symset_or(statement_finalizer_set, sync);
@@ -100,7 +129,7 @@ static ncl_parse_result parse_statement(ncl_lexer *lexer, ncl_symset valid, ncl_
     } else if (lexer->current_kind == ncl_eol_tk || lexer->current_kind == ncl_semicolon_tk) {
         ncl_lex(lexer, true);
         if (!ncl_symset_has_elem(valid, lexer->current_kind)) {
-            lexer->error_func(lexer, "can't follow a statement");
+            lexer->error_func(lexer, msg);
             skip_to(lexer, sync);
         }
     }
@@ -116,7 +145,7 @@ static ncl_parse_result parse_statements(ncl_lexer *lexer, ncl_symset valid, ncl
     ncl_symset next_sync = ncl_symset_or(next_valid, sync);
     assert(ncl_symset_has_elem(statement_starter_set, lexer->current_kind));
     while (ncl_symset_has_elem(statement_starter_set, lexer->current_kind)) {
-        ncl_parse_result current = parse_statement(lexer, next_valid, next_sync);
+        ncl_parse_result current = parse_statement(lexer, next_valid, next_sync, "statement expected");
         if (result.error == ncl_parse_none) {
             result = current;
         } else {
@@ -171,9 +200,10 @@ void ncl_free_node(ncl_node *top)
         case ncl_error_node:
             break;
         case ncl_statements_node:
-            for (ncl_node *cur = top->statements.head, *next; cur != NULL; cur = next) {
-                ncl_free_node(cur->statements.head);
+            ncl_free_node(top->statements.head);
+            for (ncl_node *cur = top->statements.tail, *next; cur != NULL; cur = next) {
                 next = cur->statements.tail;
+                ncl_free_node(cur->statements.head);
                 free(cur);
             }
             break;

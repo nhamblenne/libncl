@@ -23,6 +23,9 @@ void show_node(int indent, ncl_node *top)
                     show_node(indent + 4, cur->statements.head);
                 }
                 break;
+            case ncl_number_node:
+                printf("%*sNUMBER %.*s\n", indent, "", (int)(top->number.end-top->number.start), top->number.start);
+                break;
         }
     }
 }
