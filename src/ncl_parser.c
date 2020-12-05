@@ -215,7 +215,24 @@ static ncl_parse_result parse_basic_expression(ncl_lexer *lexer, ncl_symset vali
 static ncl_parse_result parse_unary_call_expression(ncl_lexer *lexer, ncl_symset valid, ncl_symset sync)
 {
     assert(ncl_symset_has_elem(unary_call_expression_starter_set, lexer->current_kind));
-    return parse_basic_expression(lexer, valid, sync);
+    ncl_symset next_valid = ncl_symset_or(basic_expression_starter_set, valid);
+    ncl_parse_result result = parse_basic_expression(lexer, next_valid, sync);
+    ncl_node *last = NULL;
+    while (ncl_symset_has_elem(basic_expression_starter_set, lexer->current_kind)) {
+        ncl_parse_result arg = parse_basic_expression(lexer, next_valid, sync);
+        ncl_node *node = malloc(sizeof(ncl_node));
+        node->kind = ncl_call1_node;
+        node->call.args = arg.top;
+        if (last == NULL) {
+            node->call.func = result.top;
+            result.top = node;
+        } else {
+            node->call.func = last->call.args;
+            last->call.args = node;
+        }
+        last = node;
+    }
+    return result;
 }
 
 static ncl_parse_result parse_expression(ncl_lexer *lexer, ncl_symset valid, ncl_symset sync)

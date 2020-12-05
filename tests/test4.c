@@ -43,6 +43,11 @@ void show_node(int indent, ncl_node *top)
                     show_node(indent + 4, cur->list.head);
                 }
                 break;
+            case ncl_call1_node:
+                printf("%*sCALL\n", indent, "");
+                show_node(indent + 4, top->call.func);
+                show_node(indent + 4, top->call.args);
+                break;
             default:
                 printf("%*s<!!! UNKNOWN !!!>\n", indent, "");
                 break;
@@ -55,7 +60,9 @@ int main() {
 
     result = ncl_parse("36\n42;96\n102;ab;$foo;$;\"toto\";"
                        "(a);((a));a.c;(a).c.x;"
-                       "a();a(b); a(b,c);a(b.c,f());");
+                       "sin x; sin x(2); x(sin y); sin cos x\n"
+                       "a();a(b); a(b,c);a(b.c,f());"
+                       );
     show_node(0, result.top);
     ncl_free_node(result.top);
 }
