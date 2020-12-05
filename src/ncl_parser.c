@@ -26,6 +26,7 @@ static ncl_symset statements_follower_set;
 static void dynamic_initialization()
 {
     basic_expression_starter_set = ncl_symset_add_elem(ncl_init_symset(), ncl_number_tk);
+    basic_expression_starter_set = ncl_symset_add_elem(basic_expression_starter_set, ncl_id_tk);
 
     unary_call_expression_starter_set = basic_expression_starter_set;
 
@@ -89,8 +90,14 @@ static ncl_parse_result parse_basic_expression(ncl_lexer *lexer, ncl_symset vali
         case ncl_number_tk:
             result.top = malloc(sizeof(ncl_node));
             result.top->kind = ncl_number_node;
-            result.top->number.start = lexer->current_start;
-            result.top->number.end = lexer->current_end;
+            result.top->token.start = lexer->current_start;
+            result.top->token.end = lexer->current_end;
+            break;
+        case ncl_id_tk:
+            result.top = malloc(sizeof(ncl_node));
+            result.top->kind = ncl_id_node;
+            result.top->token.start = lexer->current_start;
+            result.top->token.end = lexer->current_end;
             break;
     }
     ncl_lex(lexer, !ncl_symset_has_elem(valid, ncl_eol_tk));

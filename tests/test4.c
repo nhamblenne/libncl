@@ -24,7 +24,10 @@ void show_node(int indent, ncl_node *top)
                 }
                 break;
             case ncl_number_node:
-                printf("%*sNUMBER %.*s\n", indent, "", (int)(top->number.end-top->number.start), top->number.start);
+                printf("%*sNUMBER %.*s\n", indent, "", (int)(top->token.end-top->token.start), top->token.start);
+                break;
+            case ncl_id_node:
+                printf("%*sIDENT %.*s\n", indent, "", (int)(top->token.end-top->token.start), top->token.start);
                 break;
         }
     }
@@ -33,7 +36,7 @@ void show_node(int indent, ncl_node *top)
 int main() {
     ncl_parse_result result;
 
-    result = ncl_parse("36\n42;96\n102");
+    result = ncl_parse("36\n42;96\n102;ab;$foo;$");
     show_node(0, result.top);
     ncl_free_node(result.top);
 }

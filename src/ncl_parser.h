@@ -13,6 +13,7 @@ typedef enum ncl_node_kind {
     ncl_error_node,
     ncl_statements_node,
     ncl_number_node,
+    ncl_id_node,
 } ncl_node_kind;
 
 typedef struct ncl_node_statements {
@@ -20,16 +21,16 @@ typedef struct ncl_node_statements {
     ncl_node *tail;
 } ncl_node_statements;
 
-typedef struct ncl_node_number {
+typedef struct ncl_node_token_exp {
     char const* start;
     char const* end;
-} ncl_node_number;
+} ncl_node_token_exp;
 
 struct ncl_node {
     ncl_node_kind kind;
     union {
         ncl_node_statements statements;
-        ncl_node_number number;
+        ncl_node_token_exp token;
     };
 };
 
