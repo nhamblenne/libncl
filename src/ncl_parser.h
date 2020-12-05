@@ -14,6 +14,7 @@ typedef enum ncl_node_kind {
     ncl_statements_node,
     ncl_number_node,
     ncl_id_node,
+    ncl_string_node,
 } ncl_node_kind;
 
 typedef struct ncl_node_statements {
