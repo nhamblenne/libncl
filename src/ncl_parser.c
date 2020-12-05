@@ -9,8 +9,32 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <assert.h>
 
 #include "ncl_lexer.h"
+#include "ncl_symset.h"
+
+static bool dynamic_initialization_done = false;
+static ncl_symset expression_starter_set;
+static ncl_symset statement_starter_set;
+static ncl_symset statement_finalizer_set;
+static ncl_symset statements_starter_set;
+static ncl_symset statements_follower_set;
+
+static void dynamic_initialization()
+{
+    expression_starter_set = ncl_symset_add_elem(ncl_init_symset(), ncl_number_tk);
+
+    statement_starter_set = expression_starter_set;
+    statement_finalizer_set = ncl_symset_add_elem(ncl_init_symset(), ncl_eol_tk);
+    statement_finalizer_set = ncl_symset_add_elem(statement_finalizer_set, ncl_semicolon_tk);
+    statement_finalizer_set = ncl_symset_add_elem(statement_finalizer_set, ncl_eof_tk);
+
+    statements_starter_set = statement_starter_set;
+    statements_follower_set = ncl_symset_add_elem(ncl_init_symset(), ncl_eof_tk);
+
+    dynamic_initialization_done = true;
+}
 
 static void error_func(ncl_lexer *lexer, char const *msg)
 {
@@ -36,50 +60,63 @@ static void error_func(ncl_lexer *lexer, char const *msg)
     printf("\n%s\n", msg);
 }
 
-static void skip_to(ncl_lexer *lexer, ncl_token_kind sync1, ncl_token_kind sync2)
+static void skip_to(ncl_lexer *lexer, struct ncl_symset sync)
 {
-    while (lexer->current_kind != sync1
-           && lexer->current_kind != sync2
-           && lexer->current_kind != ncl_eof_tk)
-    {
-        ncl_lex(lexer, sync1 != ncl_eol_tk);
+    bool skip_EOL = !ncl_symset_has_elem(sync, ncl_eol_tk);
+    bool skipped = false;
+    while (!ncl_symset_has_elem(sync, lexer->current_kind)) {
+        ncl_lex(lexer, skip_EOL);
+        skipped = true;
+    }
+    if (skipped) {
+        lexer->error_func(lexer, "parsing restarted here");
     }
 }
 
-static ncl_parse_result parse_expression(ncl_lexer *lexer)
+static ncl_parse_result parse_expression(ncl_lexer *lexer, ncl_symset valid, ncl_symset sync)
 {
+    assert(ncl_symset_has_elem(expression_starter_set, lexer->current_kind));
     lexer->error_func(lexer, "Not a valid expression");
-    skip_to(lexer, ncl_eol_tk, ncl_semicolon_tk);
+    ncl_lex(lexer, !ncl_symset_has_elem(sync, ncl_eol_tk));
+    skip_to(lexer, sync);
     ncl_node *result = malloc(sizeof(ncl_node));
     result->kind = ncl_error_node;
     return (ncl_parse_result){ .error = ncl_parse_error, .top = result };
 }
 
-static ncl_parse_result parse_statement(ncl_lexer *lexer)
+static ncl_parse_result parse_statement(ncl_lexer *lexer, ncl_symset valid, ncl_symset sync)
 {
-    ncl_parse_result result = parse_expression(lexer);
-    if (lexer->current_kind != ncl_eol_tk
-        && lexer->current_kind != ncl_semicolon_tk
-        && lexer->current_kind != ncl_eof_tk)
-    {
+    assert(ncl_symset_has_elem(statement_starter_set, lexer->current_kind));
+    ncl_symset next_sync = ncl_symset_or(statement_finalizer_set, sync);
+    ncl_parse_result result = parse_expression(lexer, statement_finalizer_set, next_sync);
+    if (!ncl_symset_has_elem(statement_finalizer_set, lexer->current_kind)) {
         result.error = ncl_parse_error;
-        lexer->error_func(lexer, "Trailing data after statement");
-        skip_to(lexer, ncl_eol_tk, ncl_semicolon_tk);
-    }
-    if (lexer->current_kind == ncl_eol_tk
-        || lexer->current_kind == ncl_semicolon_tk)
-    {
+        if (ncl_symset_has_elem(valid, lexer->current_kind)) {
+            lexer->error_func(lexer, "missing semicolon");
+        } else {
+            lexer->error_func(lexer, "trailing data after statement");
+            skip_to(lexer, sync);
+        }
+    } else if (lexer->current_kind == ncl_eol_tk || lexer->current_kind == ncl_semicolon_tk) {
         ncl_lex(lexer, true);
+        if (!ncl_symset_has_elem(valid, lexer->current_kind)) {
+            lexer->error_func(lexer, "can't follow a statement");
+            skip_to(lexer, sync);
+        }
     }
     return result;
 }
 
-static ncl_parse_result parse_statements(ncl_lexer *lexer)
+static ncl_parse_result parse_statements(ncl_lexer *lexer, ncl_symset valid, ncl_symset sync)
 {
+    assert(ncl_symset_has_elem(statements_starter_set, lexer->current_kind));
     ncl_parse_result result = { .error = ncl_parse_none, .top = NULL };
     ncl_node *last = NULL;
-    while (lexer->current_kind != ncl_eof_tk) {
-        ncl_parse_result current = parse_statement(lexer);
+    ncl_symset next_valid = ncl_symset_or(valid, statement_starter_set);
+    ncl_symset next_sync = ncl_symset_or(next_valid, sync);
+    assert(ncl_symset_has_elem(statement_starter_set, lexer->current_kind));
+    while (ncl_symset_has_elem(statement_starter_set, lexer->current_kind)) {
+        ncl_parse_result current = parse_statement(lexer, next_valid, next_sync);
         if (result.error == ncl_parse_none) {
             result = current;
         } else {
@@ -107,6 +144,9 @@ static ncl_parse_result parse_statements(ncl_lexer *lexer)
 
 ncl_parse_result ncl_parse(char const *current)
 {
+    if (!dynamic_initialization_done) {
+        dynamic_initialization();
+    }
     ncl_lexer lexer;
     lexer.buffer_start = current;
     lexer.buffer_pos = current;
@@ -114,7 +154,15 @@ ncl_parse_result ncl_parse(char const *current)
     lexer.line_number = 1;
     lexer.error_func = error_func;
     ncl_lex(&lexer, false);
-    return parse_statements(&lexer);
+    if (!ncl_symset_has_elem(statements_starter_set, lexer.current_kind)) {
+        lexer.error_func(&lexer, "invalid statement start");
+        skip_to(&lexer, ncl_symset_or(statements_starter_set, statements_follower_set));
+    }
+    if (ncl_symset_has_elem(statements_starter_set, lexer.current_kind)) {
+        return parse_statements(&lexer, statements_follower_set, statements_follower_set);
+    } else {
+        return (ncl_parse_result) { .error = ncl_parse_none, .top = NULL };
+    }
 }
 
 void ncl_free_node(ncl_node *top)
