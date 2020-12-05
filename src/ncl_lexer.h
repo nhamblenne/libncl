@@ -27,6 +27,7 @@ typedef enum ncl_token_kind {
     ncl_openpar_tk,
     ncl_closepar_tk,
     ncl_dot_tk,
+    ncl_comma_tk,
 
     ncl_last_tk
 } ncl_token_kind;
@@ -46,6 +47,6 @@ struct ncl_lexer
     ncl_lexer_error_func error_func;
 };
 
-ncl_token_kind ncl_lex(ncl_lexer*, bool skipEOL);
+ncl_token_kind ncl_lex(ncl_lexer*, bool skip_eol);
 
 #endif

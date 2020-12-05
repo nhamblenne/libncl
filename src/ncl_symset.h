@@ -21,6 +21,7 @@ typedef struct ncl_symset {
 
 ncl_symset ncl_init_symset();
 ncl_symset ncl_symset_add_elem(ncl_symset, ncl_token_kind);
+ncl_symset ncl_symset_remove_elem(ncl_symset, ncl_token_kind);
 ncl_symset ncl_symset_or(ncl_symset, ncl_symset);
 ncl_symset ncl_symset_and(ncl_symset, ncl_symset);
 

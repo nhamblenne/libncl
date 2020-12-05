@@ -22,6 +22,13 @@ ncl_symset ncl_symset_add_elem(ncl_symset set, ncl_token_kind tk)
     return result;
 }
 
+ncl_symset ncl_symset_remove_elem(ncl_symset set, ncl_token_kind tk)
+{
+    ncl_symset result = set;
+    result.elem[tk / NCL_UINTMAX_BIT_SIZE] &= ~(uintmax_t)1 << (tk % NCL_UINTMAX_BIT_SIZE);
+    return result;
+}
+
 ncl_symset ncl_symset_or(ncl_symset a, ncl_symset b)
 {
     ncl_symset result;

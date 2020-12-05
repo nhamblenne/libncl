@@ -145,7 +145,7 @@ static char const *accept_if_preceded_by_white(ncl_lexer *lexer, char const *cur
     return cur;
 }
 
-ncl_token_kind ncl_lex(ncl_lexer *lexer, bool skipEOL)
+ncl_token_kind ncl_lex(ncl_lexer *lexer, bool skip_eol)
 {
     if (lexer->error_func == NULL) {
         lexer->error_func = default_error_func;
@@ -189,7 +189,7 @@ start:;
                 ++cur;
             }
             ++lexer->line_number;
-            if (skipEOL) {
+            if (skip_eol) {
                 goto start;
             } else {
                 lexer->current_kind = ncl_eol_tk;
@@ -201,7 +201,7 @@ start:;
                 ++cur;
             }
             ++lexer->line_number;
-            if (skipEOL) {
+            if (skip_eol) {
                 goto start;
             } else {
                 lexer->current_kind = ncl_eol_tk;
@@ -383,7 +383,11 @@ start:;
             lexer->current_kind = ncl_dot_tk;
             break;
 
-        case '\'': case ',': case '?':  case '@':
+        case ',':
+            lexer->current_kind = ncl_comma_tk;
+            break;
+
+        case '\'': case '?':  case '@':
         case ']':  case '^': case '`': case '}':
             lexer->current_kind = ncl_reserved_tk;
             break;
