@@ -39,7 +39,8 @@ void show_node(int indent, ncl_node *top)
 int main() {
     ncl_parse_result result;
 
-    result = ncl_parse("36\n42;96\n102;ab;$foo;$;\"toto\"");
+    result = ncl_parse("36\n42;96\n102;ab;$foo;$;\"toto\";"
+                       "(a);((a));");
     show_node(0, result.top);
     ncl_free_node(result.top);
 }

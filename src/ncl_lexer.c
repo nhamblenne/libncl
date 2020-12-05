@@ -309,7 +309,7 @@ start:;
                 }
                 goto start;
             } else {
-                lexer->current_kind = ncl_reserved_tk;
+                lexer->current_kind = ncl_openpar_tk;
             }
             break;
 
@@ -318,7 +318,7 @@ start:;
                 lexer->current_kind = ncl_istring_end_tk;
                 cur = terminate_string(lexer, cur + 1, ncl_istring_cont_tk);
             } else {
-                lexer->current_kind = ncl_reserved_tk;
+                lexer->current_kind = ncl_closepar_tk;
             }
             break;
 

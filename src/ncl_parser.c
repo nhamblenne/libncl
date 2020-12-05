@@ -16,6 +16,7 @@
 
 static bool dynamic_initialization_done = false;
 static ncl_symset basic_expression_starter_set;
+static ncl_symset basic_expression_closepar_set;
 static ncl_symset unary_call_expression_starter_set;
 static ncl_symset expression_starter_set;
 static ncl_symset statement_starter_set;
@@ -28,6 +29,8 @@ static void dynamic_initialization()
     basic_expression_starter_set = ncl_symset_add_elem(ncl_init_symset(), ncl_number_tk);
     basic_expression_starter_set = ncl_symset_add_elem(basic_expression_starter_set, ncl_id_tk);
     basic_expression_starter_set = ncl_symset_add_elem(basic_expression_starter_set, ncl_string_tk);
+    basic_expression_starter_set = ncl_symset_add_elem(basic_expression_starter_set, ncl_openpar_tk);
+    basic_expression_closepar_set = ncl_symset_add_elem(ncl_init_symset(), ncl_closepar_tk);
 
     unary_call_expression_starter_set = basic_expression_starter_set;
 
@@ -81,10 +84,14 @@ static void skip_to(ncl_lexer *lexer, struct ncl_symset sync)
     }
 }
 
+static ncl_parse_result parse_expression(ncl_lexer *lexer, ncl_symset valid, ncl_symset sync);
+
 static ncl_parse_result parse_basic_expression(ncl_lexer *lexer, ncl_symset valid, ncl_symset sync)
 {
     assert(ncl_symset_has_elem(basic_expression_starter_set, lexer->current_kind));
     ncl_parse_result result;
+    ncl_symset next_sync;
+    bool skip = true;
     result.error = ncl_parse_error;
     result.top = NULL;
     switch (lexer->current_kind) {
@@ -106,8 +113,23 @@ static ncl_parse_result parse_basic_expression(ncl_lexer *lexer, ncl_symset vali
             result.top->token.start = lexer->current_start;
             result.top->token.end = lexer->current_end;
             break;
+        case ncl_openpar_tk:
+            ncl_lex(lexer, !ncl_symset_has_elem(expression_starter_set, ncl_eol_tk));
+            if (!ncl_symset_has_elem(expression_starter_set, lexer->current_kind)) {
+                lexer->error_func(lexer, "invalid expression start");
+                next_sync = ncl_symset_or(expression_starter_set, sync);
+                skip_to(lexer, next_sync);
+            }
+            if (ncl_symset_has_elem(expression_starter_set, lexer->current_kind)) {
+                next_sync = ncl_symset_or(basic_expression_closepar_set, sync);
+                result = parse_expression(lexer, basic_expression_closepar_set, next_sync);
+            }
+            skip = lexer->current_kind == ncl_closepar_tk;
+            break;
     }
-    ncl_lex(lexer, !ncl_symset_has_elem(valid, ncl_eol_tk));
+    if (skip) {
+        ncl_lex(lexer, !ncl_symset_has_elem(valid, ncl_eol_tk));
+    }
     if (!ncl_symset_has_elem(valid, lexer->current_kind)) {
         lexer->error_func(lexer, "unexpected token");
         skip_to(lexer, sync);
