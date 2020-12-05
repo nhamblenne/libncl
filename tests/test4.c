@@ -48,6 +48,15 @@ void show_node(int indent, ncl_node *top)
                 show_node(indent + 4, top->call.func);
                 show_node(indent + 4, top->call.args);
                 break;
+            case ncl_unary_node:
+                printf("%*sOPER %s\n", indent, "", ncl_token_names[top->unary.op]);
+                show_node(indent + 4, top->unary.arg);
+                break;
+            case ncl_binary_node:
+                printf("%*sOPER %s\n", indent, "", ncl_token_names[top->binary.op]);
+                show_node(indent + 4, top->binary.left);
+                show_node(indent + 4, top->binary.right);
+                break;
             default:
                 printf("%*s<!!! UNKNOWN !!!>\n", indent, "");
                 break;
@@ -62,6 +71,7 @@ int main() {
                        "(a);((a));a.c;(a).c.x;"
                        "sin x; sin x(2); x(sin y); sin cos x\n"
                        "a();a(b); a(b,c);a(b.c,f());"
+                       "+a; -b; sin(-x);+ + - a; +f g; (+f) g;"
                        );
     show_node(0, result.top);
     ncl_free_node(result.top);

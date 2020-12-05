@@ -20,6 +20,7 @@ static ncl_symset basic_expression_closepar_set;
 static ncl_symset basic_expression_cont_set;
 static ncl_symset basic_expression_incall_set;
 static ncl_symset unary_call_expression_starter_set;
+static ncl_symset unary_expression_starter_set;
 static ncl_symset expression_starter_set;
 static ncl_symset statement_starter_set;
 static ncl_symset statement_finalizer_set;
@@ -39,7 +40,10 @@ static void dynamic_initialization()
 
     unary_call_expression_starter_set = basic_expression_starter_set;
 
-    expression_starter_set = unary_call_expression_starter_set;
+    unary_expression_starter_set = ncl_symset_add_elem(unary_call_expression_starter_set, ncl_plus_tk);
+    unary_expression_starter_set = ncl_symset_add_elem(unary_expression_starter_set, ncl_minus_tk);
+
+    expression_starter_set = unary_expression_starter_set;
 
     statement_starter_set = expression_starter_set;
     statement_finalizer_set = ncl_symset_add_elem(ncl_init_symset(), ncl_eol_tk);
@@ -235,10 +239,32 @@ static ncl_parse_result parse_unary_call_expression(ncl_lexer *lexer, ncl_symset
     return result;
 }
 
+static ncl_parse_result parse_unary_expression(ncl_lexer *lexer, ncl_symset valid, ncl_symset sync)
+{
+    assert(ncl_symset_has_elem(unary_expression_starter_set, lexer->current_kind));
+    if (lexer->current_kind != ncl_plus_tk && lexer->current_kind != ncl_minus_tk) {
+        return parse_unary_call_expression(lexer, valid, sync);
+    } else {
+        ncl_token_kind oper = lexer->current_kind;
+        ncl_lex(lexer, true);
+        if (!ncl_symset_has_elem(unary_expression_starter_set, lexer->current_kind)) {
+            lexer->error_func(lexer, "not a valid expression");
+            skip_to(lexer, unary_expression_starter_set);
+        }
+        ncl_parse_result result = parse_unary_expression(lexer, valid, sync);
+        ncl_node *node = malloc(sizeof *node);
+        node->kind = ncl_unary_node;
+        node->unary.op = oper;
+        node->unary.arg = result.top;
+        result.top = node;
+        return result;
+    }
+}
+
 static ncl_parse_result parse_expression(ncl_lexer *lexer, ncl_symset valid, ncl_symset sync)
 {
     assert(ncl_symset_has_elem(expression_starter_set, lexer->current_kind));
-    return parse_unary_call_expression(lexer, valid, sync);
+    return parse_unary_expression(lexer, valid, sync);
 }
 
 static ncl_parse_result parse_statement(ncl_lexer *lexer, ncl_symset valid, ncl_symset sync, char const* msg)

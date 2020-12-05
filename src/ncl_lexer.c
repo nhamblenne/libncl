@@ -8,6 +8,34 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <string.h>
+#include <ammintrin.h>
+#include <stddef.h>
+
+char const* const ncl_token_names[] = {
+        "error",
+        "reserved",
+        "eof",
+        "eol",
+        "id",
+        "operator",
+        "number",
+        "string",
+        "istring",
+        "istring_start",
+        "istring_cont",
+        "istring_end",
+        "zstring",
+        ";",
+        "(",
+        ")",
+        ".",
+        ",",
+        "+",
+        "-",
+
+        "last"
+};
 
 typedef enum CharacterClass {
     whiteClass      = 0x0001, /* white space */
@@ -46,10 +74,35 @@ static unsigned short charClass[] = {
         0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100,
         0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100,
         0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100,
-        0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100
+        0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100,
 };
 
 #define HAS_CLASS(c, cl) ((charClass[(unsigned char)(c)] & (unsigned)(cl)) != 0)
+
+static struct { char const* name; ncl_token_kind kind; } predefined_operators[] = {
+        { "+", ncl_plus_tk },
+        { "-", ncl_minus_tk },
+};
+#define NUM_PREDEFINED_OPERATORS (sizeof(predefined_operators)/sizeof(*predefined_operators))
+
+static void check_predefined_operators(ncl_lexer *lexer)
+{
+    int low = 0;
+    int high = NUM_PREDEFINED_OPERATORS;
+    char const* tk = lexer->current_start;
+    ptrdiff_t tk_len = lexer->current_end - lexer->current_start;
+    while (low+1 != high) {
+        int mid = (low + high)/2;
+        if (strncmp(predefined_operators[mid].name, tk, tk_len) <= 0) {
+            low = mid;
+        } else {
+            high = mid;
+        }
+    }
+    if (strncmp(predefined_operators[low].name, tk, tk_len) == 0) {
+        lexer->current_kind = predefined_operators[low].kind;
+    }
+}
 
 static void default_error_func(ncl_lexer *lexer, char const *msg)
 {
@@ -285,6 +338,8 @@ start:;
                 ++cur;
             }
             lexer->current_kind = ncl_operator_tk;
+            lexer->current_end = cur;
+            check_predefined_operators(lexer);
             break;
 
         /* punctuations */
