@@ -26,6 +26,8 @@ typedef enum ncl_token_kind {
     ncl_semicolon_tk,
     ncl_openpar_tk,
     ncl_closepar_tk,
+    ncl_dot_tk,
+
     ncl_last_tk
 } ncl_token_kind;
 

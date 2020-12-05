@@ -32,6 +32,10 @@ void show_node(int indent, ncl_node *top)
             case ncl_string_node:
                 printf("%*sSTRING %.*s\n", indent, "", (int)(top->token.end-top->token.start), top->token.start);
                 break;
+            case ncl_field_node:
+                printf("%*sFIELD %.*s of\n", indent, "", (int)(top->field.end-top->field.start), top->field.start);
+                show_node(indent + 4, top->field.exp);
+                break;
         }
     }
 }
@@ -40,7 +44,7 @@ int main() {
     ncl_parse_result result;
 
     result = ncl_parse("36\n42;96\n102;ab;$foo;$;\"toto\";"
-                       "(a);((a));");
+                       "(a);((a));a.c;(a).c.x");
     show_node(0, result.top);
     ncl_free_node(result.top);
 }

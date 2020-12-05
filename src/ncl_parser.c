@@ -17,6 +17,7 @@
 static bool dynamic_initialization_done = false;
 static ncl_symset basic_expression_starter_set;
 static ncl_symset basic_expression_closepar_set;
+static ncl_symset basic_expression_cont_set;
 static ncl_symset unary_call_expression_starter_set;
 static ncl_symset expression_starter_set;
 static ncl_symset statement_starter_set;
@@ -31,6 +32,7 @@ static void dynamic_initialization()
     basic_expression_starter_set = ncl_symset_add_elem(basic_expression_starter_set, ncl_string_tk);
     basic_expression_starter_set = ncl_symset_add_elem(basic_expression_starter_set, ncl_openpar_tk);
     basic_expression_closepar_set = ncl_symset_add_elem(ncl_init_symset(), ncl_closepar_tk);
+    basic_expression_cont_set = ncl_symset_add_elem(ncl_init_symset(), ncl_dot_tk);
 
     unary_call_expression_starter_set = basic_expression_starter_set;
 
@@ -91,6 +93,8 @@ static ncl_parse_result parse_basic_expression(ncl_lexer *lexer, ncl_symset vali
     assert(ncl_symset_has_elem(basic_expression_starter_set, lexer->current_kind));
     ncl_parse_result result;
     ncl_symset next_sync;
+    ncl_symset next_valid = ncl_symset_or(valid, basic_expression_cont_set);
+    ncl_node *node;
     bool skip = true;
     result.error = ncl_parse_error;
     result.top = NULL;
@@ -128,7 +132,26 @@ static ncl_parse_result parse_basic_expression(ncl_lexer *lexer, ncl_symset vali
             break;
     }
     if (skip) {
-        ncl_lex(lexer, !ncl_symset_has_elem(valid, ncl_eol_tk));
+        ncl_lex(lexer, !ncl_symset_has_elem(next_valid, ncl_eol_tk));
+    }
+    while (ncl_symset_has_elem(basic_expression_cont_set, lexer->current_kind)) {
+        switch (lexer->current_kind) {
+            case ncl_dot_tk:
+                ncl_lex(lexer, true);
+                if (lexer->current_kind != ncl_id_tk) {
+                    lexer->error_func(lexer, "expecting identifier");
+                    skip_to(lexer, next_sync);
+                    return result;
+                }
+                node = malloc(sizeof(ncl_node));
+                node->kind = ncl_field_node;
+                node->field.exp = result.top;
+                node->field.start = lexer->current_start;
+                node->field.end = lexer->current_end;
+                result.top = node;
+                ncl_lex(lexer, !ncl_symset_has_elem(next_valid, ncl_eol_tk));
+                break;
+        }
     }
     if (!ncl_symset_has_elem(valid, lexer->current_kind)) {
         lexer->error_func(lexer, "unexpected token");
@@ -242,6 +265,9 @@ void ncl_free_node(ncl_node *top)
                 ncl_free_node(cur->statements.head);
                 free(cur);
             }
+            break;
+        case ncl_field_node:
+            ncl_free_node(top->field.exp);
             break;
     }
     free(top);

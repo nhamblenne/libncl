@@ -46,7 +46,8 @@ int main()
                         "\"string with $\" $\"istring with $\" $\"istring with $ $( )$istring with $ $( )$ istring with $\"\n"
                         "\"$(\"\n 12.45#ABE+5\"Foo\""
                         "\\\\ string\n"
-                        "\\\\ string\n";
+                        "\\\\ string\n"
+                        "a.c\n";
     ncl_token_kind tk;
     ncl_lexer lexer;
     lexer.buffer_start = text;
@@ -54,7 +55,7 @@ int main()
     lexer.buffer_end = text + sizeof(text) - 1;
     lexer.line_number = 1;
     lexer.error_func = error_func;
-    while (tk = ncl_lex(&lexer, false),  tk != ncl_eof_tk) {
+    while (tk = ncl_lex(&lexer, true),  tk != ncl_eof_tk) {
         printf("%d, |%.*s|\n", tk, (int)(lexer.current_end - lexer.current_start), lexer.current_start);
         lexer.buffer_pos = lexer.current_end;
     }
