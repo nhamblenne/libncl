@@ -75,7 +75,8 @@ int main() {
                        "a\n.b\na\\ \n.b;"
                        "a mod +e;"
                        "sin a * b / c div d mod +e rem x(x) * cos y;"
-                       "a + b * a + b; (a + b) * (a + b); a*a + 2*a*b + b*b"
+                       "a + b * a + b; (a + b) * (a + b); a*a + 2*a*b + b*b;"
+                       "sin x * k < a + cos theta == foo(bar, a+b);"
                        );
     show_node(0, result.top);
     ncl_free_node(result.top);

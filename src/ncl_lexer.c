@@ -36,6 +36,12 @@ char const* const ncl_token_names[] = {
         "*",
         "/",
         "&",
+        "==",
+        "!=",
+        "<",
+        "<=",
+        ">=",
+        ">",
 
         "div",
         "mod",
@@ -87,29 +93,50 @@ static unsigned short charClass[] = {
 #define HAS_CLASS(c, cl) ((charClass[(unsigned char)(c)] & (unsigned)(cl)) != 0)
 
 static struct { char const* name; ncl_token_kind kind; } predefined_operators[] = {
-        { "&", ncl_ampsersand_tk },
-        { "*", ncl_mult_tk },
-        { "+", ncl_plus_tk },
-        { "-", ncl_minus_tk },
-        { "/", ncl_div_tk },
+        { "!=", ncl_ne_tk },
+        { "&",  ncl_ampersand_tk },
+        { "*",  ncl_mult_tk },
+        { "+",  ncl_plus_tk },
+        { "-",  ncl_minus_tk },
+        { "/",  ncl_div_tk },
+        { "<",  ncl_lt_tk },
+        { "<=", ncl_le_tk },
+        { "==", ncl_eq_tk },
+        { ">",  ncl_gt_tk },
+        { ">=", ncl_ge_tk },
 };
 #define NUM_PREDEFINED_OPERATORS (sizeof(predefined_operators)/sizeof(*predefined_operators))
+
+static int compare(char const *s, char const *t, char const *te)
+{
+    while (*s != '\0' && t != te && *s == *t) {
+        ++s;
+        ++t;
+    }
+    if (*s == '\0') {
+        return t == te ? 0 : -1;
+    }
+    if (t == te) {
+        return 1;
+    }
+    return *s < *t ? -1 : 1;
+}
 
 static void check_predefined_operators(ncl_lexer *lexer)
 {
     int low = 0;
     int high = NUM_PREDEFINED_OPERATORS;
-    char const* tk = lexer->current_start;
-    ptrdiff_t tk_len = lexer->current_end - lexer->current_start;
+    char const *tk = lexer->current_start;
+    char const *te = lexer->current_end;
     while (low+1 != high) {
         int mid = (low + high)/2;
-        if (strncmp(predefined_operators[mid].name, tk, tk_len) <= 0) {
+        if (compare(predefined_operators[mid].name, tk, te) <= 0) {
             low = mid;
         } else {
             high = mid;
         }
     }
-    if (strlen(predefined_operators[low].name) == tk_len && strncmp(predefined_operators[low].name, tk, tk_len) == 0) {
+    if (compare(predefined_operators[low].name, tk, te) == 0) {
         lexer->current_kind = predefined_operators[low].kind;
     }
 }
@@ -126,16 +153,16 @@ static void check_keywords(ncl_lexer *lexer)
     int low = 0;
     int high = NUM_KEYWORDS;
     char const* tk = lexer->current_start;
-    ptrdiff_t tk_len = lexer->current_end - lexer->current_start;
+    char const* te = lexer->current_end;
     while (low+1 != high) {
         int mid = (low + high)/2;
-        if (strncmp(keywords[mid].name, tk, tk_len) <= 0) {
+        if (compare(keywords[mid].name, tk, te) <= 0) {
             low = mid;
         } else {
             high = mid;
         }
     }
-    if (strlen(keywords[low].name) == tk_len && strncmp(keywords[low].name, tk, tk_len) == 0) {
+    if (compare(keywords[low].name, tk, te) == 0) {
         lexer->current_kind = keywords[low].kind;
     }
 }
