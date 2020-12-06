@@ -454,10 +454,9 @@ static ncl_parse_result parse_statement(ncl_lexer *lexer, ncl_symset valid, ncl_
 
 static ncl_parse_result parse_statements(ncl_lexer *lexer, ncl_symset valid, ncl_symset sync)
 {
-    if (!ensure(lexer, multiplicative_expression_starter_set, sync, "can't start a multiplicative expression")) {
+    if (!ensure(lexer, statements_starter_set, sync, "can't start a statement")) {
         return (ncl_parse_result){ .error = ncl_parse_error, .top = NULL };
     }
-    assert(ncl_symset_has_elem(statements_starter_set, lexer->current_kind));
     ncl_parse_result result = { .error = ncl_parse_none, .top = NULL };
     ncl_node *last = NULL;
     ncl_symset next_valid = ncl_symset_or(valid, statement_starter_set);
@@ -468,12 +467,12 @@ static ncl_parse_result parse_statements(ncl_lexer *lexer, ncl_symset valid, ncl
         if (result.error == ncl_parse_none) {
             result = current;
         } else {
-            ncl_node *node = malloc(sizeof(ncl_node));
+            ncl_node *node = malloc(sizeof *node);
             node->kind = ncl_statements_node;
             node->list.head = current.top;
             node->list.tail = NULL;
             if (last == NULL) {
-                ncl_node *prev = malloc(sizeof(ncl_node));
+                ncl_node *prev = malloc(sizeof *prev);
                 prev->kind = ncl_statements_node;
                 prev->list.head = result.top;
                 prev->list.tail = node;
