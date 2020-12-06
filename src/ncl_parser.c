@@ -1,5 +1,5 @@
 /* =======================================================================
- * ncl_parser.c
+² * ncl_parser.c
  * Copyright (c) 2020 Nicolas Ivan Hamblenne
  * =======================================================================
  */
@@ -27,6 +27,7 @@ static ncl_symset additive_expression_starter_set;
 static ncl_symset additive_expression_next_set;
 static ncl_symset compare_expression_starter_set;
 static ncl_symset compare_expression_next_set;
+static ncl_symset unary_boolean_expression_starter_set;
 static ncl_symset expression_starter_set;
 static ncl_symset statement_starter_set;
 static ncl_symset statement_finalizer_set;
@@ -69,7 +70,9 @@ static void dynamic_initialization()
     compare_expression_next_set = ncl_symset_add_elem(compare_expression_next_set, ncl_ge_tk);
     compare_expression_next_set = ncl_symset_add_elem(compare_expression_next_set, ncl_gt_tk);
 
-    expression_starter_set = compare_expression_starter_set;
+    unary_boolean_expression_starter_set = ncl_symset_add_elem(compare_expression_starter_set, ncl_not_kw);
+
+    expression_starter_set = unary_boolean_expression_starter_set;
 
     statement_starter_set = expression_starter_set;
     statement_finalizer_set = ncl_symset_add_elem(ncl_init_symset(), ncl_eol_tk);
@@ -362,10 +365,32 @@ static ncl_parse_result parse_compare_expression(ncl_lexer *lexer, ncl_symset va
     return result;
 }
 
+static ncl_parse_result parse_unary_boolean_expression(ncl_lexer *lexer, ncl_symset valid, ncl_symset sync)
+{
+    assert(ncl_symset_has_elem(unary_boolean_expression_starter_set, lexer->current_kind));
+    if (lexer->current_kind != ncl_not_kw) {
+        return parse_compare_expression(lexer, valid, sync);
+    } else {
+        ncl_token_kind oper = lexer->current_kind;
+        ncl_lex(lexer, true);
+        if (!ncl_symset_has_elem(unary_boolean_expression_starter_set, lexer->current_kind)) {
+            lexer->error_func(lexer, "not a valid expression");
+            skip_to(lexer, unary_boolean_expression_starter_set);
+        }
+        ncl_parse_result result = parse_unary_boolean_expression(lexer, valid, sync);
+        ncl_node *node = malloc(sizeof *node);
+        node->kind = ncl_unary_node;
+        node->unary.op = oper;
+        node->unary.arg = result.top;
+        result.top = node;
+        return result;
+    }
+}
+
 static ncl_parse_result parse_expression(ncl_lexer *lexer, ncl_symset valid, ncl_symset sync)
 {
     assert(ncl_symset_has_elem(expression_starter_set, lexer->current_kind));
-    return parse_compare_expression(lexer, valid, sync);
+    return parse_unary_boolean_expression(lexer, valid, sync);
 }
 
 static ncl_parse_result parse_statement(ncl_lexer *lexer, ncl_symset valid, ncl_symset sync, char const* msg)
