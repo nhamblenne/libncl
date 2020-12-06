@@ -48,7 +48,7 @@ int main()
                         "\\\\ string\n"
                         "\\\\ string\n"
                         "a.c\n"
-                        "a\ \n.c";
+                        "a\\ \n.c";
     ncl_token_kind tk;
     ncl_lexer lexer;
     lexer.buffer_start = text;
