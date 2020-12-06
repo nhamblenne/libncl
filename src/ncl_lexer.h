@@ -32,6 +32,7 @@ typedef enum ncl_token_kind {
     ncl_minus_tk,
     ncl_mult_tk,
     ncl_div_tk,
+    ncl_ampsersand_tk,
 
     ncl_idiv_kw,
     ncl_mod_kw,

@@ -35,6 +35,7 @@ char const* const ncl_token_names[] = {
         "-",
         "*",
         "/",
+        "&",
 
         "div",
         "mod",
@@ -86,6 +87,7 @@ static unsigned short charClass[] = {
 #define HAS_CLASS(c, cl) ((charClass[(unsigned char)(c)] & (unsigned)(cl)) != 0)
 
 static struct { char const* name; ncl_token_kind kind; } predefined_operators[] = {
+        { "&", ncl_ampsersand_tk },
         { "*", ncl_mult_tk },
         { "+", ncl_plus_tk },
         { "-", ncl_minus_tk },
