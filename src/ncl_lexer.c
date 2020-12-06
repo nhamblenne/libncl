@@ -33,6 +33,12 @@ char const* const ncl_token_names[] = {
         ",",
         "+",
         "-",
+        "*",
+        "/",
+
+        "div",
+        "mod",
+        "rem",
 
         "last"
 };
@@ -80,8 +86,10 @@ static unsigned short charClass[] = {
 #define HAS_CLASS(c, cl) ((charClass[(unsigned char)(c)] & (unsigned)(cl)) != 0)
 
 static struct { char const* name; ncl_token_kind kind; } predefined_operators[] = {
+        { "*", ncl_mult_tk },
         { "+", ncl_plus_tk },
         { "-", ncl_minus_tk },
+        { "/", ncl_div_tk },
 };
 #define NUM_PREDEFINED_OPERATORS (sizeof(predefined_operators)/sizeof(*predefined_operators))
 
@@ -99,8 +107,34 @@ static void check_predefined_operators(ncl_lexer *lexer)
             high = mid;
         }
     }
-    if (strncmp(predefined_operators[low].name, tk, tk_len) == 0) {
+    if (strlen(predefined_operators[low].name) == tk_len && strncmp(predefined_operators[low].name, tk, tk_len) == 0) {
         lexer->current_kind = predefined_operators[low].kind;
+    }
+}
+
+static struct { char const* name; ncl_token_kind kind; } keywords[] = {
+        { "div", ncl_idiv_kw },
+        { "mod", ncl_mod_kw },
+        { "rem", ncl_mod_kw },
+};
+#define NUM_KEYWORDS (sizeof(keywords)/sizeof(*keywords))
+
+static void check_keywords(ncl_lexer *lexer)
+{
+    int low = 0;
+    int high = NUM_KEYWORDS;
+    char const* tk = lexer->current_start;
+    ptrdiff_t tk_len = lexer->current_end - lexer->current_start;
+    while (low+1 != high) {
+        int mid = (low + high)/2;
+        if (strncmp(keywords[mid].name, tk, tk_len) <= 0) {
+            low = mid;
+        } else {
+            high = mid;
+        }
+    }
+    if (strlen(keywords[low].name) == tk_len && strncmp(keywords[low].name, tk, tk_len) == 0) {
+        lexer->current_kind = keywords[low].kind;
     }
 }
 
@@ -305,6 +339,8 @@ start:;
                     cur = terminate_string(lexer, cur + 1, ncl_istring_start_tk);
                 }
             }
+            lexer->current_end = cur;
+            check_keywords(lexer);
             break;
 
         /* strings */

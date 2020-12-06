@@ -30,6 +30,12 @@ typedef enum ncl_token_kind {
     ncl_comma_tk,
     ncl_plus_tk,
     ncl_minus_tk,
+    ncl_mult_tk,
+    ncl_div_tk,
+
+    ncl_idiv_kw,
+    ncl_mod_kw,
+    ncl_rem_kw,
 
     ncl_last_tk
 } ncl_token_kind;

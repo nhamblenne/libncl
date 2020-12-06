@@ -21,6 +21,8 @@ static ncl_symset basic_expression_cont_set;
 static ncl_symset basic_expression_incall_set;
 static ncl_symset unary_call_expression_starter_set;
 static ncl_symset unary_expression_starter_set;
+static ncl_symset multiplicative_expression_starter_set;
+static ncl_symset multiplicative_expression_next_set;
 static ncl_symset expression_starter_set;
 static ncl_symset statement_starter_set;
 static ncl_symset statement_finalizer_set;
@@ -43,7 +45,14 @@ static void dynamic_initialization()
     unary_expression_starter_set = ncl_symset_add_elem(unary_call_expression_starter_set, ncl_plus_tk);
     unary_expression_starter_set = ncl_symset_add_elem(unary_expression_starter_set, ncl_minus_tk);
 
-    expression_starter_set = unary_expression_starter_set;
+    multiplicative_expression_starter_set = unary_expression_starter_set;
+    multiplicative_expression_next_set = ncl_symset_add_elem(ncl_init_symset(), ncl_mult_tk);
+    multiplicative_expression_next_set = ncl_symset_add_elem(multiplicative_expression_next_set, ncl_div_tk);
+    multiplicative_expression_next_set = ncl_symset_add_elem(multiplicative_expression_next_set, ncl_idiv_kw);
+    multiplicative_expression_next_set = ncl_symset_add_elem(multiplicative_expression_next_set, ncl_mod_kw);
+    multiplicative_expression_next_set = ncl_symset_add_elem(multiplicative_expression_next_set, ncl_rem_kw);
+
+    expression_starter_set = multiplicative_expression_starter_set;
 
     statement_starter_set = expression_starter_set;
     statement_finalizer_set = ncl_symset_add_elem(ncl_init_symset(), ncl_eol_tk);
@@ -77,7 +86,7 @@ static void error_func(ncl_lexer *lexer, char const *msg)
     if (lexer->current_end > lexer->current_start+1) {
         putchar('^');
     }
-    printf("\n%s\n", msg);
+    printf("\n('%.*s': %s) %s\n", (int)(lexer->current_end-lexer->current_start), lexer->current_start,  ncl_token_names[lexer->current_kind], msg);
 }
 
 static ncl_token_kind look_ahead(ncl_lexer *lexer, bool skip_eol)
@@ -261,10 +270,35 @@ static ncl_parse_result parse_unary_expression(ncl_lexer *lexer, ncl_symset vali
     }
 }
 
+static ncl_parse_result parse_multiplicative_expression(ncl_lexer *lexer, ncl_symset valid, ncl_symset sync)
+{
+    assert(ncl_symset_has_elem(multiplicative_expression_starter_set, lexer->current_kind));
+    ncl_symset next_valid = ncl_symset_or(valid, multiplicative_expression_next_set);
+    ncl_symset next_sync = ncl_symset_or(sync, multiplicative_expression_next_set);
+    ncl_parse_result result = parse_unary_expression(lexer, next_valid, next_sync);
+
+    while (ncl_symset_has_elem(multiplicative_expression_next_set, lexer->current_kind)) {
+        ncl_token_kind oper = lexer->current_kind;
+        ncl_lex(lexer, true);
+        if (!ncl_symset_has_elem(unary_expression_starter_set, lexer->current_kind)) {
+            lexer->error_func(lexer, "not a valid expression");
+            skip_to(lexer, unary_expression_starter_set);
+        }
+        ncl_parse_result sub_result = parse_unary_expression(lexer, next_valid, next_sync);
+        ncl_node *node = malloc(sizeof *node);
+        node->kind = ncl_binary_node;
+        node->binary.op = oper;
+        node->binary.left = result.top;
+        node->binary.right = sub_result.top;
+        result.top = node;
+    }
+    return result;
+}
+
 static ncl_parse_result parse_expression(ncl_lexer *lexer, ncl_symset valid, ncl_symset sync)
 {
     assert(ncl_symset_has_elem(expression_starter_set, lexer->current_kind));
-    return parse_unary_expression(lexer, valid, sync);
+    return parse_multiplicative_expression(lexer, valid, sync);
 }
 
 static ncl_parse_result parse_statement(ncl_lexer *lexer, ncl_symset valid, ncl_symset sync, char const* msg)

@@ -73,6 +73,8 @@ int main() {
                        "a();a(b); a(b,c);a(b.c,f());"
                        "+a; -b; sin(-x);+ + - a; +f g; (+f) g\n"
                        "a\n.b\na\\ \n.b;"
+                       "a mod +e;"
+                       "sin a * b / c div d mod +e rem x(x) * cos y;"
                        );
     show_node(0, result.top);
     ncl_free_node(result.top);
