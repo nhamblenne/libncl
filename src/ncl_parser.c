@@ -28,6 +28,8 @@ static ncl_symset additive_expression_next_set;
 static ncl_symset compare_expression_starter_set;
 static ncl_symset compare_expression_next_set;
 static ncl_symset unary_boolean_expression_starter_set;
+static ncl_symset binary_boolean_expression_starter_set;
+static ncl_symset binary_boolean_expression_next_set;
 static ncl_symset expression_starter_set;
 static ncl_symset statement_starter_set;
 static ncl_symset statement_finalizer_set;
@@ -72,7 +74,11 @@ static void dynamic_initialization()
 
     unary_boolean_expression_starter_set = ncl_symset_add_elem(compare_expression_starter_set, ncl_not_kw);
 
-    expression_starter_set = unary_boolean_expression_starter_set;
+    binary_boolean_expression_starter_set = unary_boolean_expression_starter_set;
+    binary_boolean_expression_next_set = ncl_symset_add_elem(ncl_init_symset(), ncl_and_kw);
+    binary_boolean_expression_next_set = ncl_symset_add_elem(binary_boolean_expression_next_set, ncl_or_kw);
+
+    expression_starter_set = binary_boolean_expression_starter_set;
 
     statement_starter_set = expression_starter_set;
     statement_finalizer_set = ncl_symset_add_elem(ncl_init_symset(), ncl_eol_tk);
@@ -387,10 +393,35 @@ static ncl_parse_result parse_unary_boolean_expression(ncl_lexer *lexer, ncl_sym
     }
 }
 
+static ncl_parse_result parse_binary_boolean_expression(ncl_lexer *lexer, ncl_symset valid, ncl_symset sync)
+{
+    assert(ncl_symset_has_elem(binary_boolean_expression_starter_set, lexer->current_kind));
+    ncl_symset next_valid = ncl_symset_or(valid, binary_boolean_expression_next_set);
+    ncl_symset next_sync = ncl_symset_or(sync, binary_boolean_expression_next_set);
+    ncl_parse_result result = parse_unary_boolean_expression(lexer, next_valid, next_sync);
+
+    while (ncl_symset_has_elem(binary_boolean_expression_next_set, lexer->current_kind)) {
+        ncl_token_kind oper = lexer->current_kind;
+        ncl_lex(lexer, true);
+        if (!ncl_symset_has_elem(unary_boolean_expression_starter_set, lexer->current_kind)) {
+            lexer->error_func(lexer, "not a valid expression");
+            skip_to(lexer, unary_boolean_expression_starter_set);
+        }
+        ncl_parse_result sub_result = parse_unary_boolean_expression(lexer, next_valid, next_sync);
+        ncl_node *node = malloc(sizeof *node);
+        node->kind = ncl_binary_node;
+        node->binary.op = oper;
+        node->binary.left = result.top;
+        node->binary.right = sub_result.top;
+        result.top = node;
+    }
+    return result;
+}
+
 static ncl_parse_result parse_expression(ncl_lexer *lexer, ncl_symset valid, ncl_symset sync)
 {
     assert(ncl_symset_has_elem(expression_starter_set, lexer->current_kind));
-    return parse_unary_boolean_expression(lexer, valid, sync);
+    return parse_binary_boolean_expression(lexer, valid, sync);
 }
 
 static ncl_parse_result parse_statement(ncl_lexer *lexer, ncl_symset valid, ncl_symset sync, char const* msg)
@@ -478,6 +509,9 @@ void ncl_free_node(ncl_node *top)
 {
     switch (top->kind) {
         case ncl_error_node:
+        case ncl_number_node:
+        case ncl_id_node:
+        case ncl_string_node:
             break;
         case ncl_statements_node:
             ncl_free_node(top->list.head);
@@ -489,6 +523,27 @@ void ncl_free_node(ncl_node *top)
             break;
         case ncl_field_node:
             ncl_free_node(top->field.exp);
+            break;
+        case ncl_call_node:
+        case ncl_call1_node:
+            ncl_free_node(top->call.func);
+            if (top->call.args != NULL) {
+                ncl_free_node(top->call.args);
+            }
+            break;
+        case ncl_args_node:
+            for (ncl_node *cur = top->list.tail, *next; cur != NULL; cur = next) {
+                next = cur->list.tail;
+                ncl_free_node(cur->list.head);
+                free(cur);
+            }
+            break;
+        case ncl_unary_node:
+            ncl_free_node(top->unary.arg);
+            break;
+        case ncl_binary_node:
+            ncl_free_node(top->binary.left);
+            ncl_free_node(top->binary.right);
             break;
     }
     free(top);

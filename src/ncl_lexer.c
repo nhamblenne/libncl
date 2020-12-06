@@ -47,6 +47,8 @@ char const* const ncl_token_names[] = {
         "mod",
         "rem",
         "not",
+        "and",
+        "or",
 
         "last"
 };
@@ -143,9 +145,11 @@ static void check_predefined_operators(ncl_lexer *lexer)
 }
 
 static struct { char const* name; ncl_token_kind kind; } keywords[] = {
+        { "and", ncl_and_kw },
         { "div", ncl_idiv_kw },
         { "mod", ncl_mod_kw },
         { "not", ncl_not_kw },
+        { "or", ncl_or_kw },
         { "rem", ncl_mod_kw },
 };
 #define NUM_KEYWORDS (sizeof(keywords)/sizeof(*keywords))
