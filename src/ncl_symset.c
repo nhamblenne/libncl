@@ -15,6 +15,16 @@ ncl_symset ncl_init_symset()
     return result;
 }
 
+ncl_symset ncl_symset_singleton(ncl_token_kind tk)
+{
+    ncl_symset result;
+    for (int i = 0; i < NCL_SYMSET_SIZE; ++i) {
+        result.elem[0] = 0;
+    }
+    result.elem[tk / NCL_UINTMAX_BIT_SIZE] = 1 << (tk % NCL_UINTMAX_BIT_SIZE);
+    return result;
+}
+
 ncl_symset ncl_symset_add_elem(ncl_symset set, ncl_token_kind tk)
 {
     ncl_symset result = set;
