@@ -426,7 +426,27 @@ start:;
                 } while (cur != end && !HAS_CLASS(*cur, eolClass));
                 lexer->current_kind = ncl_zstring_tk;
             } else {
-                lexer->current_kind = ncl_reserved_tk;
+                char const* look_ahead = cur;
+                while (look_ahead != end && HAS_CLASS(*look_ahead, whiteClass)) {
+                    ++look_ahead;
+                }
+                if (look_ahead != end && HAS_CLASS(*look_ahead, eolClass)) {
+                    if (*look_ahead == 0x0A) {
+                        if (++look_ahead != end && *look_ahead == 0x0D) {
+                            ++look_ahead;
+                        }
+                    } else {
+                        assert(*look_ahead == 0x0D);
+                        if (++look_ahead != end && *look_ahead == 0x0A) {
+                            ++look_ahead;
+                        }
+                    }
+                    cur = look_ahead;
+                    ++lexer->line_number;
+                    goto start;
+                } else {
+                    lexer->current_kind = ncl_reserved_tk;
+                }
             }
             break;
 

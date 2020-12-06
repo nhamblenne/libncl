@@ -71,7 +71,8 @@ int main() {
                        "(a);((a));a.c;(a).c.x;"
                        "sin x; sin x(2); x(sin y); sin cos x\n"
                        "a();a(b); a(b,c);a(b.c,f());"
-                       "+a; -b; sin(-x);+ + - a; +f g; (+f) g;"
+                       "+a; -b; sin(-x);+ + - a; +f g; (+f) g\n"
+                       "a\n.b\na\\ \n.b;"
                        );
     show_node(0, result.top);
     ncl_free_node(result.top);

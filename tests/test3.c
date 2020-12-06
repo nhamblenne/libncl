@@ -47,7 +47,8 @@ int main()
                         "\"$(\"\n 12.45#ABE+5\"Foo\""
                         "\\\\ string\n"
                         "\\\\ string\n"
-                        "a.c\n";
+                        "a.c\n"
+                        "a\ \n.c";
     ncl_token_kind tk;
     ncl_lexer lexer;
     lexer.buffer_start = text;
