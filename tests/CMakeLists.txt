@@ -17,3 +17,6 @@ target_link_libraries(test4 ncl)
 
 add_executable(test5 test5.c)
 target_link_libraries(test5 ncl)
+
+add_executable(test6 test6.c)
+target_link_libraries(test6 ncl)

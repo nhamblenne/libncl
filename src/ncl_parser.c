@@ -32,6 +32,7 @@ static ncl_symset unary_boolean_expression_starter_set;
 static ncl_symset binary_boolean_expression_starter_set;
 static ncl_symset binary_boolean_expression_next_set;
 static ncl_symset expression_starter_set;
+static ncl_symset simple_statement_starter_set;
 static ncl_symset statement_starter_set;
 static ncl_symset statement_finalizer_set;
 static ncl_symset statements_starter_set;
@@ -83,7 +84,9 @@ static void dynamic_initialization()
 
     expression_starter_set = binary_boolean_expression_starter_set;
 
-    statement_starter_set = expression_starter_set;
+    simple_statement_starter_set = ncl_symset_add_elem(expression_starter_set, ncl_pass_kw);
+
+    statement_starter_set = simple_statement_starter_set;
     statement_finalizer_set = ncl_symset_singleton(ncl_eol_tk);
     statement_finalizer_set = ncl_symset_add_elem(statement_finalizer_set, ncl_semicolon_tk);
     statement_finalizer_set = ncl_symset_add_elem(statement_finalizer_set, ncl_eof_tk);
@@ -445,13 +448,38 @@ static ncl_parse_result parse_expression(ncl_lexer *lexer, ncl_symset valid, ncl
     return parse_binary_boolean_expression(lexer, valid, sync, msg);
 }
 
-static ncl_parse_result parse_statement(ncl_lexer *lexer, ncl_symset valid, ncl_symset sync, char const* msg)
+static ncl_parse_result parse_simple_statement(ncl_lexer *lexer, ncl_symset valid, ncl_symset sync, char const *msg)
+{
+    if (!ensure(lexer, simple_statement_starter_set, sync, "can't start a simple statement")) {
+        return (ncl_parse_result){ .error = ncl_parse_error, .top = NULL };
+    }
+    ncl_parse_result result;
+    ncl_node *node;
+    result.error = ncl_parse_ok;
+    switch (lexer->current_kind) {
+        case ncl_pass_kw:
+            node = malloc(sizeof *node);
+            node->kind = ncl_pass_node;
+            result.top = node;
+            ncl_lex(lexer, ncl_symset_has_elem(valid, ncl_eol_tk));
+            break;
+        default:
+            return parse_expression(lexer, statement_finalizer_set, sync, msg);
+            break;
+    }
+    if (!ensure(lexer, valid, sync, msg)) {
+        result.error = ncl_parse_error;
+    }
+    return result;
+}
+
+static ncl_parse_result parse_statement(ncl_lexer *lexer, ncl_symset valid, ncl_symset sync, char const *msg)
 {
     if (!ensure(lexer, statement_starter_set, sync, "can't start a statement")) {
         return (ncl_parse_result){ .error = ncl_parse_error, .top = NULL };
     }
     ncl_symset next_sync = ncl_symset_or(statement_finalizer_set, sync);
-    ncl_parse_result result = parse_expression(lexer, statement_finalizer_set, next_sync, "expecting semicolon");
+    ncl_parse_result result = parse_simple_statement(lexer, statement_finalizer_set, next_sync, "expecting semicolon");
     if (!ncl_symset_has_elem(statement_finalizer_set, lexer->current_kind)) {
         result.error = ncl_parse_error;
     } else if (lexer->current_kind == ncl_eol_tk || lexer->current_kind == ncl_semicolon_tk) {

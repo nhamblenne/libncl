@@ -22,7 +22,8 @@ typedef enum ncl_node_kind {
     ncl_call1_node,
     ncl_args_node,
     ncl_unary_node,
-    ncl_binary_node
+    ncl_binary_node,
+    ncl_pass_node,
 } ncl_node_kind;
 
 typedef struct ncl_node_statements {

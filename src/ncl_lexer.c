@@ -49,6 +49,7 @@ char const* const ncl_token_names[] = {
         "not",
         "and",
         "or",
+        "pass",
 
         "last"
 };
@@ -150,6 +151,7 @@ static struct { char const* name; ncl_token_kind kind; } keywords[] = {
         { "mod", ncl_mod_kw },
         { "not", ncl_not_kw },
         { "or", ncl_or_kw },
+        { "pass", ncl_pass_kw },
         { "rem", ncl_mod_kw },
 };
 #define NUM_KEYWORDS (sizeof(keywords)/sizeof(*keywords))
