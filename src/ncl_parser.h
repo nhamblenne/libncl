@@ -26,6 +26,7 @@ typedef enum ncl_node_kind {
     ncl_pass_node,
     ncl_exit_node,
     ncl_next_node,
+    ncl_return_node,
 } ncl_node_kind;
 
 typedef struct ncl_node_statements {
@@ -60,6 +61,10 @@ typedef struct ncl_node_binary_exp {
     ncl_node *right;
 } ncl_node_binary_exp;
 
+typedef struct ncl_node_exp {
+    ncl_node *exp;
+} ncl_node_exp;
+
 struct ncl_node {
     ncl_node_kind kind;
     union {
@@ -69,6 +74,7 @@ struct ncl_node {
         ncl_node_call_exp call;
         ncl_node_unary_exp unary;
         ncl_node_binary_exp binary;
+        ncl_node_exp exp;
     };
 };
 

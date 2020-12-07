@@ -87,6 +87,7 @@ static void dynamic_initialization()
     simple_statement_starter_set = ncl_symset_add_elem(expression_starter_set, ncl_pass_kw);
     simple_statement_starter_set = ncl_symset_add_elem(simple_statement_starter_set, ncl_exit_kw);
     simple_statement_starter_set = ncl_symset_add_elem(simple_statement_starter_set, ncl_next_kw);
+    simple_statement_starter_set = ncl_symset_add_elem(simple_statement_starter_set, ncl_return_kw);
 
     statement_starter_set = simple_statement_starter_set;
     statement_finalizer_set = ncl_symset_singleton(ncl_eol_tk);
@@ -491,6 +492,18 @@ static ncl_parse_result parse_simple_statement(ncl_lexer *lexer, ncl_symset vali
             } else {
                 node->token.start = NULL;
                 node->token.end = NULL;
+            }
+            result.top = node;
+            break;
+        case ncl_return_kw:
+            ncl_lex(lexer, ncl_symset_has_elem(valid, ncl_eol_tk));
+            node = malloc(sizeof *node);
+            node->kind = ncl_return_node;
+            if (ncl_symset_has_elem(expression_starter_set, lexer->current_kind)) {
+                result = parse_expression(lexer, valid, sync, msg);
+                node->exp.exp = result.top;
+            } else {
+                node->exp.exp = NULL;
             }
             result.top = node;
             break;

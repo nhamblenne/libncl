@@ -72,6 +72,12 @@ void show_node(int indent, ncl_node *top)
                     printf("%*s%.*s\n", indent + 4, "", (int)(top->token.end-top->token.start), top->token.start);
                 }
                 break;
+            case ncl_return_node:
+                printf("%*sRETURN\n", indent, "");
+                if (top->exp.exp != NULL) {
+                    show_node(indent + 4, top->exp.exp);
+                }
+                break;
             default:
                 printf("%*s<!!! UNKNOWN !!!>\n", indent, "");
                 break;
@@ -85,6 +91,7 @@ int main() {
     result = ncl_parse("pass; pass x\n"
                        "next; next 45; next l;\n"
                        "exit; exit l; exit 101\n"
+                       "return; return 36 + 56; return sin x; return pass\n"
     );
     show_node(0, result.top);
     ncl_free_node(result.top);

@@ -21,14 +21,14 @@ ncl_symset ncl_symset_singleton(ncl_token_kind tk)
     for (int i = 0; i < NCL_SYMSET_SIZE; ++i) {
         result.elem[0] = 0;
     }
-    result.elem[tk / NCL_UINTMAX_BIT_SIZE] = 1 << (tk % NCL_UINTMAX_BIT_SIZE);
+    result.elem[tk / NCL_UINTMAX_BIT_SIZE] = (uintmax_t) 1 << (tk % NCL_UINTMAX_BIT_SIZE);
     return result;
 }
 
 ncl_symset ncl_symset_add_elem(ncl_symset set, ncl_token_kind tk)
 {
     ncl_symset result = set;
-    result.elem[tk / NCL_UINTMAX_BIT_SIZE] |= 1 << (tk % NCL_UINTMAX_BIT_SIZE);
+    result.elem[tk / NCL_UINTMAX_BIT_SIZE] |= (uintmax_t) 1 << (tk % NCL_UINTMAX_BIT_SIZE);
     return result;
 }
 
@@ -69,5 +69,5 @@ bool ncl_symset_is_empty(ncl_symset set)
 
 bool ncl_symset_has_elem(ncl_symset set, ncl_token_kind tk)
 {
-    return (set.elem[tk / NCL_UINTMAX_BIT_SIZE] & (1 << (tk % NCL_UINTMAX_BIT_SIZE))) != 0;
+    return (set.elem[tk / NCL_UINTMAX_BIT_SIZE] & ((uintmax_t) 1 << (tk % NCL_UINTMAX_BIT_SIZE))) != 0;
 }
