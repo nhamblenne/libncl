@@ -24,6 +24,8 @@ typedef enum ncl_node_kind {
     ncl_unary_node,
     ncl_binary_node,
     ncl_pass_node,
+    ncl_exit_node,
+    ncl_next_node,
 } ncl_node_kind;
 
 typedef struct ncl_node_statements {

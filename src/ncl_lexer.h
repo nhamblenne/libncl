@@ -47,6 +47,8 @@ typedef enum ncl_token_kind {
     ncl_and_kw,
     ncl_or_kw,
     ncl_pass_kw,
+    ncl_exit_kw,
+    ncl_next_kw,
 
     ncl_last_tk
 } ncl_token_kind;

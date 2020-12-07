@@ -85,6 +85,8 @@ static void dynamic_initialization()
     expression_starter_set = binary_boolean_expression_starter_set;
 
     simple_statement_starter_set = ncl_symset_add_elem(expression_starter_set, ncl_pass_kw);
+    simple_statement_starter_set = ncl_symset_add_elem(simple_statement_starter_set, ncl_exit_kw);
+    simple_statement_starter_set = ncl_symset_add_elem(simple_statement_starter_set, ncl_next_kw);
 
     statement_starter_set = simple_statement_starter_set;
     statement_finalizer_set = ncl_symset_singleton(ncl_eol_tk);
@@ -455,6 +457,7 @@ static ncl_parse_result parse_simple_statement(ncl_lexer *lexer, ncl_symset vali
     }
     ncl_parse_result result;
     ncl_node *node;
+    ncl_symset next_sync;
     result.error = ncl_parse_ok;
     switch (lexer->current_kind) {
         case ncl_pass_kw:
@@ -463,9 +466,36 @@ static ncl_parse_result parse_simple_statement(ncl_lexer *lexer, ncl_symset vali
             result.top = node;
             ncl_lex(lexer, ncl_symset_has_elem(valid, ncl_eol_tk));
             break;
+        case ncl_exit_kw:
+            ncl_lex(lexer, true);
+            node = malloc(sizeof *node);
+            node->kind = ncl_exit_node;
+            if (lexer->current_kind == ncl_id_tk) {
+                node->token.start = lexer->current_start;
+                node->token.end = lexer->current_end;
+                ncl_lex(lexer, ncl_symset_has_elem(valid, ncl_eol_tk));
+            } else {
+                node->token.start = NULL;
+                node->token.end = NULL;
+            }
+            result.top = node;
+            break;
+        case ncl_next_kw:
+            ncl_lex(lexer, true);
+            node = malloc(sizeof *node);
+            node->kind = ncl_next_node;
+            if (lexer->current_kind == ncl_id_tk) {
+                node->token.start = lexer->current_start;
+                node->token.end = lexer->current_end;
+                ncl_lex(lexer, ncl_symset_has_elem(valid, ncl_eol_tk));
+            } else {
+                node->token.start = NULL;
+                node->token.end = NULL;
+            }
+            result.top = node;
+            break;
         default:
             return parse_expression(lexer, statement_finalizer_set, sync, msg);
-            break;
     }
     if (!ensure(lexer, valid, sync, msg)) {
         result.error = ncl_parse_error;

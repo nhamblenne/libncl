@@ -60,6 +60,18 @@ void show_node(int indent, ncl_node *top)
             case ncl_pass_node:
                 printf("%*sPASS\n", indent, "");
                 break;
+            case ncl_exit_node:
+                printf("%*sEXIT\n", indent, "");
+                if (top->token.start != top->token.end) {
+                    printf("%*s%.*s\n", indent + 4, "", (int)(top->token.end-top->token.start), top->token.start);
+                }
+                break;
+            case ncl_next_node:
+                printf("%*sNEXT\n", indent, "");
+                if (top->token.start != top->token.end) {
+                    printf("%*s%.*s\n", indent + 4, "", (int)(top->token.end-top->token.start), top->token.start);
+                }
+                break;
             default:
                 printf("%*s<!!! UNKNOWN !!!>\n", indent, "");
                 break;
@@ -71,6 +83,8 @@ int main() {
     ncl_parse_result result;
 
     result = ncl_parse("pass; pass x\n"
+                       "next; next 45; next l;\n"
+                       "exit; exit l; exit 101\n"
     );
     show_node(0, result.top);
     ncl_free_node(result.top);

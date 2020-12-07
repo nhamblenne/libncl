@@ -50,6 +50,8 @@ char const* const ncl_token_names[] = {
         "and",
         "or",
         "pass",
+        "exit",
+        "next",
 
         "last"
 };
@@ -148,7 +150,9 @@ static void check_predefined_operators(ncl_lexer *lexer)
 static struct { char const* name; ncl_token_kind kind; } keywords[] = {
         { "and", ncl_and_kw },
         { "div", ncl_idiv_kw },
+        { "exit", ncl_exit_kw },
         { "mod", ncl_mod_kw },
+        { "next", ncl_next_kw },
         { "not", ncl_not_kw },
         { "or", ncl_or_kw },
         { "pass", ncl_pass_kw },
