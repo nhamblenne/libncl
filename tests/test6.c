@@ -78,6 +78,17 @@ void show_node(int indent, ncl_node *top)
                     show_node(indent + 4, top->exp.exp);
                 }
                 break;
+            case ncl_assign_node:
+                printf("%*sASSIGN\n", indent, "");
+                show_node(indent + 4, top->assign.to);
+                printf("%*s  :=\n", indent, "");
+                show_node(indent + 4, top->assign.what);
+                break;
+            case ncl_list_node:
+                for (ncl_node *cur = top; cur != NULL; cur = cur->list.tail) {
+                    show_node(indent, cur->list.head);
+                }
+                break;
             default:
                 printf("%*s<!!! UNKNOWN !!!>\n", indent, "");
                 break;
@@ -92,6 +103,7 @@ int main() {
                        "next; next 45; next l;\n"
                        "exit; exit l; exit 101\n"
                        "return; return 36 + 56; return sin x; return pass\n"
+                       "a := b; a, b := b, a; a(12), b(15) := sin x, cos x\n"
     );
     show_node(0, result.top);
     ncl_free_node(result.top);

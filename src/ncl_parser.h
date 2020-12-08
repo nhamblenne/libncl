@@ -27,12 +27,14 @@ typedef enum ncl_node_kind {
     ncl_exit_node,
     ncl_next_node,
     ncl_return_node,
+    ncl_list_node,
+    ncl_assign_node,
 } ncl_node_kind;
 
-typedef struct ncl_node_statements {
+typedef struct ncl_node_list {
     ncl_node *head;
     ncl_node *tail;
-} ncl_node_statements;
+} ncl_node_list;
 
 typedef struct ncl_node_token_exp {
     char const *start;
@@ -65,16 +67,22 @@ typedef struct ncl_node_exp {
     ncl_node *exp;
 } ncl_node_exp;
 
+typedef struct ncl_node_assign_stmt {
+    ncl_node *to;
+    ncl_node *what;
+} ncl_node_assign_stmt;
+
 struct ncl_node {
     ncl_node_kind kind;
     union {
-        ncl_node_statements list;
+        ncl_node_list list;
         ncl_node_token_exp token;
         ncl_node_field_exp field;
         ncl_node_call_exp call;
         ncl_node_unary_exp unary;
         ncl_node_binary_exp binary;
         ncl_node_exp exp;
+        ncl_node_assign_stmt assign;
     };
 };
 

@@ -32,6 +32,7 @@ static ncl_symset unary_boolean_expression_starter_set;
 static ncl_symset binary_boolean_expression_starter_set;
 static ncl_symset binary_boolean_expression_next_set;
 static ncl_symset expression_starter_set;
+static ncl_symset assignment_cont_set;
 static ncl_symset simple_statement_starter_set;
 static ncl_symset statement_starter_set;
 static ncl_symset statement_finalizer_set;
@@ -83,6 +84,9 @@ static void dynamic_initialization()
     binary_boolean_expression_next_set = ncl_symset_add_elem(binary_boolean_expression_next_set, ncl_or_kw);
 
     expression_starter_set = binary_boolean_expression_starter_set;
+
+    assignment_cont_set = ncl_symset_singleton(ncl_comma_tk);
+    assignment_cont_set = ncl_symset_add_elem(assignment_cont_set, ncl_assign_tk);
 
     simple_statement_starter_set = ncl_symset_add_elem(expression_starter_set, ncl_pass_kw);
     simple_statement_starter_set = ncl_symset_add_elem(simple_statement_starter_set, ncl_exit_kw);
@@ -451,6 +455,69 @@ static ncl_parse_result parse_expression(ncl_lexer *lexer, ncl_symset valid, ncl
     return parse_binary_boolean_expression(lexer, valid, sync, msg);
 }
 
+static ncl_parse_result parse_assignation(ncl_lexer *lexer, ncl_parse_result exp, ncl_symset valid, ncl_symset sync, char const *msg)
+{
+    ncl_parse_result result = exp;
+    ncl_symset next_sync = ncl_symset_or(assignment_cont_set, sync);
+    result.top = malloc(sizeof *result.top);
+    result.top->kind = ncl_assign_node;
+    result.top->assign.to = exp.top;
+    result.top->assign.what = NULL;
+    ncl_node *last = NULL;
+    while (lexer->current_kind == ncl_comma_tk) {
+        ncl_lex(lexer, true);
+        ncl_parse_result arg = parse_expression(lexer, assignment_cont_set, next_sync, "expecting ':='");
+        if (arg.error == ncl_parse_error) {
+            result.error = ncl_parse_error;
+        }
+        ncl_node *node = malloc(sizeof *node);
+        node->kind = ncl_list_node;
+        node->list.head = arg.top;
+        node->list.tail = NULL;
+        if (last == NULL) {
+            ncl_node *head = malloc(sizeof *head);
+            head->kind = ncl_list_node;
+            head->list.head = result.top->assign.to;
+            head->list.tail = node;
+            result.top->assign.to = head;
+        } else {
+            last->list.tail = node;
+        }
+        last = node;
+    }
+    if (lexer->current_kind == ncl_assign_tk) {
+        ncl_symset sequence_cont_set = ncl_symset_add_elem(sync, ncl_comma_tk);
+        next_sync = ncl_symset_or(sequence_cont_set, sync);
+        do {
+            ncl_lex(lexer, true);
+            ncl_parse_result arg = parse_expression(lexer, sequence_cont_set, next_sync, msg);
+            if (arg.error = ncl_parse_error) {
+                result.error = ncl_parse_error;
+            }
+            if (result.top->assign.what == NULL) {
+                result.top->assign.what = arg.top;
+                last = NULL;
+            } else {
+                ncl_node *node = malloc(sizeof *node);
+                node->kind = ncl_list_node;
+                node->list.head = arg.top;
+                node->list.tail = NULL;
+                if (last == NULL) {
+                    ncl_node *head = malloc(sizeof *head);
+                    head->kind = ncl_list_node;
+                    head->list.head = result.top->assign.what;
+                    head->list.tail = node;
+                    result.top->assign.what = head;
+                } else {
+                    last->list.tail = node;
+                }
+                last = node;
+            }
+        } while (lexer->current_kind == ncl_comma_tk);
+    }
+    return result;
+}
+
 static ncl_parse_result parse_simple_statement(ncl_lexer *lexer, ncl_symset valid, ncl_symset sync, char const *msg)
 {
     if (!ensure(lexer, simple_statement_starter_set, sync, "can't start a simple statement")) {
@@ -458,6 +525,7 @@ static ncl_parse_result parse_simple_statement(ncl_lexer *lexer, ncl_symset vali
     }
     ncl_parse_result result;
     ncl_node *node;
+    ncl_symset next_valid;
     ncl_symset next_sync;
     result.error = ncl_parse_ok;
     switch (lexer->current_kind) {
@@ -465,7 +533,7 @@ static ncl_parse_result parse_simple_statement(ncl_lexer *lexer, ncl_symset vali
             node = malloc(sizeof *node);
             node->kind = ncl_pass_node;
             result.top = node;
-            ncl_lex(lexer, ncl_symset_has_elem(valid, ncl_eol_tk));
+            ncl_lex(lexer, !ncl_symset_has_elem(valid, ncl_eol_tk));
             break;
         case ncl_exit_kw:
             ncl_lex(lexer, true);
@@ -508,7 +576,15 @@ static ncl_parse_result parse_simple_statement(ncl_lexer *lexer, ncl_symset vali
             result.top = node;
             break;
         default:
-            return parse_expression(lexer, statement_finalizer_set, sync, msg);
+            next_valid = ncl_symset_add_elem(statement_finalizer_set, ncl_comma_tk);
+            next_valid = ncl_symset_add_elem(next_valid, ncl_assign_tk);
+            next_sync = ncl_symset_add_elem(sync, ncl_comma_tk);
+            next_sync = ncl_symset_add_elem(next_sync, ncl_assign_tk);
+            result = parse_expression(lexer, next_valid, next_sync, msg);
+            if (lexer->current_kind == ncl_comma_tk || lexer->current_kind == ncl_assign_tk) {
+                result = parse_assignation(lexer, result, statement_finalizer_set, sync, msg);
+            }
+            break;
     }
     if (!ensure(lexer, valid, sync, msg)) {
         result.error = ncl_parse_error;
