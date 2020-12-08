@@ -486,11 +486,11 @@ static ncl_parse_result parse_assignation(ncl_lexer *lexer, ncl_parse_result exp
         last = node;
     }
     if (lexer->current_kind == ncl_assign_tk) {
-        ncl_symset sequence_cont_set = ncl_symset_add_elem(sync, ncl_comma_tk);
-        next_sync = ncl_symset_or(sequence_cont_set, sync);
+        ncl_symset next_valid = ncl_symset_add_elem(valid, ncl_comma_tk);
+        next_sync = ncl_symset_or(next_valid, sync);
         do {
             ncl_lex(lexer, true);
-            ncl_parse_result arg = parse_expression(lexer, sequence_cont_set, next_sync, msg);
+            ncl_parse_result arg = parse_expression(lexer, next_valid, next_sync, msg);
             if (arg.error = ncl_parse_error) {
                 result.error = ncl_parse_error;
             }
@@ -566,6 +566,7 @@ static ncl_parse_result parse_simple_statement(ncl_lexer *lexer, ncl_symset vali
     ncl_node *node;
     ncl_symset next_valid;
     ncl_symset next_sync;
+    bool check_valid = true;
     result.error = ncl_parse_ok;
     switch (lexer->current_kind) {
         case ncl_pass_kw:
@@ -609,26 +610,28 @@ static ncl_parse_result parse_simple_statement(ncl_lexer *lexer, ncl_symset vali
             if (ncl_symset_has_elem(expression_starter_set, lexer->current_kind)) {
                 result = parse_expression(lexer, valid, sync, msg);
                 node->exp.exp = result.top;
+                check_valid = false;
             } else {
                 node->exp.exp = NULL;
             }
             result.top = node;
             break;
         default:
-            next_valid = ncl_symset_add_elem(statement_finalizer_set, ncl_comma_tk);
+            next_valid = ncl_symset_add_elem(valid, ncl_comma_tk);
             next_valid = ncl_symset_add_elem(next_valid, ncl_assign_tk);
             next_valid = ncl_symset_or(next_valid, expression_starter_set);
             next_sync = ncl_symset_add_elem(sync, ncl_comma_tk);
             next_sync = ncl_symset_add_elem(next_sync, ncl_assign_tk);
             result = parse_postfix_expression(lexer, next_valid, next_sync, msg);
             if (lexer->current_kind == ncl_comma_tk || lexer->current_kind == ncl_assign_tk) {
-                result = parse_assignation(lexer, result, statement_finalizer_set, sync, msg);
+                result = parse_assignation(lexer, result, valid, sync, msg);
             } else {
-                result = parse_proc_call(lexer, result, statement_finalizer_set, sync, msg);
+                result = parse_proc_call(lexer, result, valid, sync, msg);
             }
+            check_valid = false;
             break;
     }
-    if (!ensure(lexer, valid, sync, msg)) {
+    if (check_valid && !ensure(lexer, valid, sync, msg)) {
         result.error = ncl_parse_error;
     }
     return result;
@@ -639,8 +642,22 @@ static ncl_parse_result parse_statement(ncl_lexer *lexer, ncl_symset valid, ncl_
     if (!ensure(lexer, statement_starter_set, sync, "can't start a statement")) {
         return (ncl_parse_result){ .error = ncl_parse_error, .top = NULL };
     }
+    ncl_symset next_valid = ncl_symset_add_elem(statement_finalizer_set, ncl_when_kw);
     ncl_symset next_sync = ncl_symset_or(statement_finalizer_set, sync);
-    ncl_parse_result result = parse_simple_statement(lexer, statement_finalizer_set, next_sync, "expecting semicolon");
+    ncl_parse_result result = parse_simple_statement(lexer, next_valid, next_sync, "expecting semicolon");
+    if (lexer->current_kind == ncl_when_kw) {
+        ncl_lex(lexer, true);
+        ncl_parse_result arg = parse_expression(lexer, statement_finalizer_set, next_sync, "expecting semicolon");
+        if (arg.error == ncl_parse_error) {
+            result.error = ncl_parse_error;
+        }
+        ncl_node *node = malloc(sizeof *node);
+        node->kind = ncl_cond_node;
+        node->cond.cond = arg.top;
+        node->cond.then_stmt = result.top;
+        node->cond.else_stmt = NULL;
+        result.top = node;
+    }
     if (!ncl_symset_has_elem(statement_finalizer_set, lexer->current_kind)) {
         result.error = ncl_parse_error;
     } else if (lexer->current_kind == ncl_eol_tk || lexer->current_kind == ncl_semicolon_tk) {

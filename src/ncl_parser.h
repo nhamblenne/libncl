@@ -29,6 +29,7 @@ typedef enum ncl_node_kind {
     ncl_return_node,
     ncl_list_node,
     ncl_assign_node,
+    ncl_cond_node,
 } ncl_node_kind;
 
 typedef struct ncl_node_list {
@@ -72,6 +73,12 @@ typedef struct ncl_node_assign_stmt {
     ncl_node *what;
 } ncl_node_assign_stmt;
 
+typedef struct ncl_node_cond_stmt {
+    ncl_node *cond;
+    ncl_node *then_stmt;
+    ncl_node *else_stmt;
+} ncl_node_cond_stmt;
+
 struct ncl_node {
     ncl_node_kind kind;
     union {
@@ -83,6 +90,7 @@ struct ncl_node {
         ncl_node_binary_exp binary;
         ncl_node_exp exp;
         ncl_node_assign_stmt assign;
+        ncl_node_cond_stmt cond;
     };
 };
 

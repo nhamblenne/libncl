@@ -89,6 +89,14 @@ void show_node(int indent, ncl_node *top)
                     show_node(indent, cur->list.head);
                 }
                 break;
+            case ncl_cond_node:
+                printf("%*sIF\n", indent, "");
+                show_node(indent+4, top->cond.cond);
+                printf("%*s  THEN\n", indent, "");
+                show_node(indent+4, top->cond.then_stmt);
+                printf("%*s  ELSE\n", indent, "");
+                show_node(indent+4, top->cond.else_stmt);
+                break;
             default:
                 printf("%*s<!!! UNKNOWN !!!>\n", indent, "");
                 break;
@@ -106,6 +114,7 @@ int main() {
                        "a := b; a, b := b, a; a(12), b(15) := sin x, cos x\n"
                        "proc a; proc a, b; proc; proc a+b, c+d\n"
                        "func(x) a, b\n"
+                       "a := b when x == d; return when not precond;"
     );
     show_node(0, result.top);
     ncl_free_node(result.top);

@@ -54,6 +54,7 @@ char const* const ncl_token_names[] = {
         "exit",
         "next",
         "return",
+        "when",
 
         "last"
 };
@@ -160,6 +161,7 @@ static struct { char const* name; ncl_token_kind kind; } keywords[] = {
         { "pass", ncl_pass_kw },
         { "rem", ncl_mod_kw },
         { "return", ncl_return_kw },
+        { "when", ncl_when_kw },
 };
 #define NUM_KEYWORDS (sizeof(keywords)/sizeof(*keywords))
 
