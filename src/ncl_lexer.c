@@ -55,6 +55,7 @@ char const* const ncl_token_names[] = {
         "next",
         "return",
         "when",
+        "unless",
 
         "last"
 };
@@ -151,17 +152,18 @@ static void check_predefined_operators(ncl_lexer *lexer)
 }
 
 static struct { char const* name; ncl_token_kind kind; } keywords[] = {
-        { "and", ncl_and_kw },
-        { "div", ncl_idiv_kw },
-        { "exit", ncl_exit_kw },
-        { "mod", ncl_mod_kw },
-        { "next", ncl_next_kw },
-        { "not", ncl_not_kw },
-        { "or", ncl_or_kw },
-        { "pass", ncl_pass_kw },
-        { "rem", ncl_mod_kw },
+        { "and",    ncl_and_kw },
+        { "div",    ncl_idiv_kw },
+        { "exit",   ncl_exit_kw },
+        { "mod",    ncl_mod_kw },
+        { "next",   ncl_next_kw },
+        { "not",    ncl_not_kw },
+        { "or",     ncl_or_kw },
+        { "pass",   ncl_pass_kw },
+        { "rem",    ncl_mod_kw },
         { "return", ncl_return_kw },
-        { "when", ncl_when_kw },
+        { "unless", ncl_unless_kw },
+        { "when",   ncl_when_kw },
 };
 #define NUM_KEYWORDS (sizeof(keywords)/sizeof(*keywords))
 

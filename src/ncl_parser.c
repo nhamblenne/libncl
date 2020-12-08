@@ -523,7 +523,7 @@ static ncl_parse_result parse_proc_call(ncl_lexer *lexer, ncl_parse_result exp, 
     ncl_parse_result result = exp;
     ncl_symset next_sync = ncl_symset_add_elem(sync, ncl_comma_tk);
     next_sync = ncl_symset_or(next_sync, expression_starter_set);
-    ncl_symset next_valid = ncl_symset_or(assignment_cont_set, sync);
+    ncl_symset next_valid = ncl_symset_or(assignment_cont_set, valid);
     result.top = malloc(sizeof *result.top);
     result.top->kind = ncl_call_node;
     result.top->call.func = exp.top;
@@ -643,20 +643,38 @@ static ncl_parse_result parse_statement(ncl_lexer *lexer, ncl_symset valid, ncl_
         return (ncl_parse_result){ .error = ncl_parse_error, .top = NULL };
     }
     ncl_symset next_valid = ncl_symset_add_elem(statement_finalizer_set, ncl_when_kw);
+    next_valid = ncl_symset_add_elem(next_valid, ncl_unless_kw);
     ncl_symset next_sync = ncl_symset_or(statement_finalizer_set, sync);
     ncl_parse_result result = parse_simple_statement(lexer, next_valid, next_sync, "expecting semicolon");
-    if (lexer->current_kind == ncl_when_kw) {
-        ncl_lex(lexer, true);
-        ncl_parse_result arg = parse_expression(lexer, statement_finalizer_set, next_sync, "expecting semicolon");
-        if (arg.error == ncl_parse_error) {
-            result.error = ncl_parse_error;
-        }
-        ncl_node *node = malloc(sizeof *node);
-        node->kind = ncl_cond_node;
-        node->cond.cond = arg.top;
-        node->cond.then_stmt = result.top;
-        node->cond.else_stmt = NULL;
-        result.top = node;
+    ncl_parse_result arg;
+    ncl_node *node;
+    switch (lexer->current_kind) {
+        case ncl_when_kw:
+            ncl_lex(lexer, true);
+            arg = parse_expression(lexer, statement_finalizer_set, next_sync, "expecting semicolon");
+            if (arg.error == ncl_parse_error) {
+                result.error = ncl_parse_error;
+            }
+            node = malloc(sizeof *node);
+            node->kind = ncl_cond_node;
+            node->cond.cond = arg.top;
+            node->cond.then_stmt = result.top;
+            node->cond.else_stmt = NULL;
+            result.top = node;
+            break;
+        case ncl_unless_kw:
+            ncl_lex(lexer, true);
+            arg = parse_expression(lexer, statement_finalizer_set, next_sync, "expecting semicolon");
+            if (arg.error == ncl_parse_error) {
+                result.error = ncl_parse_error;
+            }
+            node = malloc(sizeof *node);
+            node->kind = ncl_cond_node;
+            node->cond.cond = arg.top;
+            node->cond.then_stmt = NULL;
+            node->cond.else_stmt = result.top;
+            result.top = node;
+            break;
     }
     if (!ncl_symset_has_elem(statement_finalizer_set, lexer->current_kind)) {
         result.error = ncl_parse_error;
@@ -666,6 +684,7 @@ static ncl_parse_result parse_statement(ncl_lexer *lexer, ncl_symset valid, ncl_
             result.error = ncl_parse_error;
         }
     }
+
     return result;
 }
 

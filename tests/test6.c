@@ -114,7 +114,8 @@ int main() {
                        "a := b; a, b := b, a; a(12), b(15) := sin x, cos x\n"
                        "proc a; proc a, b; proc; proc a+b, c+d\n"
                        "func(x) a, b\n"
-                       "a := b when x == d; return when not precond;"
+                       "a := b when x == d; return when not precond;\n"
+                       "proc a, b, c unless foo(y)\n"
     );
     show_node(0, result.top);
     ncl_free_node(result.top);
