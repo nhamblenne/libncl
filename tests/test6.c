@@ -44,7 +44,7 @@ void show_node(int indent, ncl_node *top)
                 }
                 break;
             case ncl_call1_node:
-                printf("%*sCALL\n", indent, "");
+                printf("%*sCALL1\n", indent, "");
                 show_node(indent + 4, top->call.func);
                 show_node(indent + 4, top->call.args);
                 break;
@@ -104,6 +104,8 @@ int main() {
                        "exit; exit l; exit 101\n"
                        "return; return 36 + 56; return sin x; return pass\n"
                        "a := b; a, b := b, a; a(12), b(15) := sin x, cos x\n"
+                       "proc a; proc a, b; proc; proc a+b, c+d\n"
+                       "func(x) a, b\n"
     );
     show_node(0, result.top);
     ncl_free_node(result.top);

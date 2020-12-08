@@ -518,6 +518,45 @@ static ncl_parse_result parse_assignation(ncl_lexer *lexer, ncl_parse_result exp
     return result;
 }
 
+static ncl_parse_result parse_proc_call(ncl_lexer *lexer, ncl_parse_result exp, ncl_symset valid, ncl_symset sync, char const *msg)
+{
+    ncl_parse_result result = exp;
+    ncl_symset next_sync = ncl_symset_add_elem(sync, ncl_comma_tk);
+    next_sync = ncl_symset_or(next_sync, expression_starter_set);
+    ncl_symset next_valid = ncl_symset_or(assignment_cont_set, sync);
+    result.top = malloc(sizeof *result.top);
+    result.top->kind = ncl_call_node;
+    result.top->call.func = exp.top;
+    result.top->call.args = NULL;
+    ncl_node *last = NULL;
+    while (ncl_symset_has_elem(expression_starter_set, lexer->current_kind)
+           || lexer->current_kind == ncl_comma_tk)
+    {
+        if (lexer->current_kind == ncl_comma_tk) {
+            ncl_lex(lexer, true);
+        }
+        ncl_parse_result arg = parse_expression(lexer, next_valid, next_sync, msg);
+        if (arg.error == ncl_parse_error) {
+            result.error = ncl_parse_error;
+        }
+        ncl_node *node = malloc(sizeof *node);
+        node->kind = ncl_args_node;
+        node->list.head = arg.top;
+        node->list.tail = NULL;
+        if (last != NULL) {
+            last->list.tail = node;
+        } else {
+            result.top->call.args = node;
+        }
+        last = node;
+        if (ncl_symset_has_elem(expression_starter_set, lexer->current_kind)) {
+            lexer->error_func(lexer, "expecting ,");
+            result.error = ncl_parse_error;
+        }
+    }
+    return result;
+}
+
 static ncl_parse_result parse_simple_statement(ncl_lexer *lexer, ncl_symset valid, ncl_symset sync, char const *msg)
 {
     if (!ensure(lexer, simple_statement_starter_set, sync, "can't start a simple statement")) {
@@ -578,11 +617,14 @@ static ncl_parse_result parse_simple_statement(ncl_lexer *lexer, ncl_symset vali
         default:
             next_valid = ncl_symset_add_elem(statement_finalizer_set, ncl_comma_tk);
             next_valid = ncl_symset_add_elem(next_valid, ncl_assign_tk);
+            next_valid = ncl_symset_or(next_valid, expression_starter_set);
             next_sync = ncl_symset_add_elem(sync, ncl_comma_tk);
             next_sync = ncl_symset_add_elem(next_sync, ncl_assign_tk);
-            result = parse_expression(lexer, next_valid, next_sync, msg);
+            result = parse_postfix_expression(lexer, next_valid, next_sync, msg);
             if (lexer->current_kind == ncl_comma_tk || lexer->current_kind == ncl_assign_tk) {
                 result = parse_assignation(lexer, result, statement_finalizer_set, sync, msg);
+            } else {
+                result = parse_proc_call(lexer, result, statement_finalizer_set, sync, msg);
             }
             break;
     }
