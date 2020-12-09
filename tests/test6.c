@@ -119,6 +119,7 @@ int main() {
                        "if foo then bar; end\n"
                        "if foo then bar; else qux; end\n"
                        "if foo then bar; elsif cond then foo; else qux; end\n"
+                       "begin foo\nbar\nif foo then bar\nqux\nend\nend\n"
     );
     show_node(0, result.top);
     ncl_free_node(result.top);

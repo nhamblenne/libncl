@@ -58,6 +58,7 @@ typedef enum ncl_token_kind {
     ncl_elsif_kw,
     ncl_else_kw,
     ncl_end_kw,
+    ncl_begin_kw,
 
     ncl_last_tk
 } ncl_token_kind;

@@ -99,6 +99,7 @@ static void dynamic_initialization()
 
     statement_starter_set = simple_statement_starter_set;
     statement_starter_set = ncl_symset_add_elem(statement_starter_set, ncl_if_kw);
+    statement_starter_set = ncl_symset_add_elem(statement_starter_set, ncl_begin_kw);
     statement_finalizer_set = ncl_symset_singleton(ncl_eol_tk);
     statement_finalizer_set = ncl_symset_add_elem(statement_finalizer_set, ncl_semicolon_tk);
     statement_finalizer_set = ncl_symset_add_elem(statement_finalizer_set, ncl_eof_tk);
@@ -706,6 +707,23 @@ static ncl_parse_result parse_if_statement(ncl_lexer *lexer, ncl_symset valid, n
     return result;
 }
 
+static ncl_parse_result parse_begin_statement(ncl_lexer *lexer, ncl_symset valid, ncl_symset sync, char const *msg)
+{
+    if (!ensure(lexer, ncl_symset_singleton(ncl_begin_kw), sync, "expecting if")) {
+        return (ncl_parse_result){ .error = ncl_parse_error, .top = NULL };
+    }
+    ncl_lex(lexer, true);
+    ncl_symset next_sync = ncl_symset_add_elem(sync, ncl_end_kw);
+    ncl_parse_result result = parse_statements(lexer, ncl_symset_singleton(ncl_end_kw), next_sync, "expecting end");
+    if (lexer->current_kind == ncl_end_kw) {
+        ncl_lex(lexer, !ncl_symset_has_elem(valid, ncl_eol_tk));
+        if (!ensure(lexer, valid, sync, msg)) {
+            result.error = ncl_parse_error;
+        }
+    }
+    return result;
+}
+
 static ncl_parse_result parse_statement(ncl_lexer *lexer, ncl_symset valid, ncl_symset sync, char const *msg)
 {
     if (!ensure(lexer, statement_starter_set, sync, "can't start a statement")) {
@@ -716,6 +734,9 @@ static ncl_parse_result parse_statement(ncl_lexer *lexer, ncl_symset valid, ncl_
     switch (lexer->current_kind) {
         case ncl_if_kw:
             result = parse_if_statement(lexer, statement_finalizer_set, next_sync, msg);
+            break;
+        case ncl_begin_kw:
+            result = parse_begin_statement(lexer, statement_finalizer_set, next_sync, msg);
             break;
         default: {
             ncl_symset next_valid = ncl_symset_add_elem(statement_finalizer_set, ncl_when_kw);
