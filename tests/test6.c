@@ -116,6 +116,9 @@ int main() {
                        "func(x) a, b\n"
                        "a := b when x == d; return when not precond;\n"
                        "proc a, b, c unless foo(y)\n"
+                       "if foo then bar; end\n"
+                       "if foo then bar; else qux; end\n"
+                       "if foo then bar; elsif cond then foo; else qux; end\n"
     );
     show_node(0, result.top);
     ncl_free_node(result.top);

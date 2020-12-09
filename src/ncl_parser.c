@@ -34,6 +34,7 @@ static ncl_symset binary_boolean_expression_next_set;
 static ncl_symset expression_starter_set;
 static ncl_symset assignment_cont_set;
 static ncl_symset simple_statement_starter_set;
+static ncl_symset if_statement_cont_set;
 static ncl_symset statement_starter_set;
 static ncl_symset statement_finalizer_set;
 static ncl_symset statements_starter_set;
@@ -93,7 +94,11 @@ static void dynamic_initialization()
     simple_statement_starter_set = ncl_symset_add_elem(simple_statement_starter_set, ncl_next_kw);
     simple_statement_starter_set = ncl_symset_add_elem(simple_statement_starter_set, ncl_return_kw);
 
+    if_statement_cont_set = ncl_symset_add_elem(ncl_symset_singleton(ncl_elsif_kw), ncl_else_kw);
+    if_statement_cont_set = ncl_symset_add_elem(if_statement_cont_set, ncl_end_kw);
+
     statement_starter_set = simple_statement_starter_set;
+    statement_starter_set = ncl_symset_add_elem(statement_starter_set, ncl_if_kw);
     statement_finalizer_set = ncl_symset_singleton(ncl_eol_tk);
     statement_finalizer_set = ncl_symset_add_elem(statement_finalizer_set, ncl_semicolon_tk);
     statement_finalizer_set = ncl_symset_add_elem(statement_finalizer_set, ncl_eof_tk);
@@ -160,6 +165,7 @@ static bool ensure(ncl_lexer *lexer, ncl_symset valid, ncl_symset sync, char con
 }
 
 static ncl_parse_result parse_expression(ncl_lexer *lexer, ncl_symset valid, ncl_symset sync, char const *msg);
+static ncl_parse_result parse_statements(ncl_lexer *lexer, ncl_symset valid, ncl_symset sync, char const *msg);
 
 static ncl_parse_result parse_basic_expression(ncl_lexer *lexer, ncl_symset valid, ncl_symset sync, char const *msg)
 {
@@ -637,44 +643,116 @@ static ncl_parse_result parse_simple_statement(ncl_lexer *lexer, ncl_symset vali
     return result;
 }
 
+static ncl_parse_result parse_if_statement(ncl_lexer *lexer, ncl_symset valid, ncl_symset sync, char const *msg)
+{
+    if (!ensure(lexer, ncl_symset_singleton(ncl_if_kw), sync, "expecting if")) {
+        return (ncl_parse_result){ .error = ncl_parse_error, .top = NULL };
+    }
+    ncl_lex(lexer, true);
+    ncl_symset next_sync = ncl_symset_add_elem(sync, ncl_then_kw);
+    next_sync = ncl_symset_or(next_sync, statements_starter_set);
+    next_sync = ncl_symset_add_elem(next_sync, ncl_elsif_kw);
+    next_sync = ncl_symset_add_elem(next_sync, ncl_else_kw);
+    ncl_parse_result result = parse_expression(lexer, ncl_symset_singleton(ncl_then_kw), next_sync, "expecting then");
+    ncl_node *node = malloc(sizeof *node);
+    node->kind = ncl_cond_node;
+    node->cond.cond = result.top;
+    node->cond.then_stmt = NULL;
+    node->cond.else_stmt = NULL;
+    result.top = node;
+    if (lexer->current_kind == ncl_then_kw) {
+        ncl_lex(lexer, true);
+    }
+    ncl_parse_result block = parse_statements(lexer, if_statement_cont_set, next_sync, "expecting else, elsif or end");
+    if (block.error == ncl_parse_error) {
+        result.error = ncl_parse_error;
+    }
+    node->cond.then_stmt = block.top;
+    while (lexer->current_kind == ncl_elsif_kw) {
+        ncl_lex(lexer, true);
+        ncl_parse_result cond = parse_expression(lexer, ncl_symset_singleton(ncl_then_kw), next_sync, "expecting then");
+        if (lexer->current_kind == ncl_then_kw) {
+            ncl_lex(lexer, true);
+        }
+        if (cond.error == ncl_parse_error) {
+            result.error = ncl_parse_error;
+        }
+        ncl_node *sub = malloc(sizeof *sub);
+        sub->kind = ncl_cond_node;
+        sub->cond.cond = cond.top;
+        node->cond.else_stmt = sub;
+        node = sub;
+        block = parse_statements(lexer, if_statement_cont_set, next_sync, "expecting else, elsif or end");
+        if (block.error == ncl_parse_error) {
+            result.error = ncl_parse_error;
+        }
+        node->cond.then_stmt = block.top;
+        node->cond.else_stmt = NULL;
+    }
+    if (lexer->current_kind == ncl_else_kw) {
+        ncl_lex(lexer, true);
+        block = parse_statements(lexer, if_statement_cont_set, next_sync, "expecting end");
+        if (block.error == ncl_parse_error) {
+            result.error = ncl_parse_error;
+        }
+        node->cond.else_stmt = block.top;
+    }
+    if (lexer->current_kind == ncl_end_kw) {
+        ncl_lex(lexer, !ncl_symset_has_elem(valid, ncl_eol_tk));
+        if (!ensure(lexer, valid, sync, msg)) {
+            result.error = ncl_parse_error;
+        }
+    }
+    return result;
+}
+
 static ncl_parse_result parse_statement(ncl_lexer *lexer, ncl_symset valid, ncl_symset sync, char const *msg)
 {
     if (!ensure(lexer, statement_starter_set, sync, "can't start a statement")) {
         return (ncl_parse_result){ .error = ncl_parse_error, .top = NULL };
     }
-    ncl_symset next_valid = ncl_symset_add_elem(statement_finalizer_set, ncl_when_kw);
-    next_valid = ncl_symset_add_elem(next_valid, ncl_unless_kw);
     ncl_symset next_sync = ncl_symset_or(statement_finalizer_set, sync);
-    ncl_parse_result result = parse_simple_statement(lexer, next_valid, next_sync, "expecting semicolon");
-    ncl_parse_result arg;
-    ncl_node *node;
+    ncl_parse_result result;
     switch (lexer->current_kind) {
-        case ncl_when_kw:
-            ncl_lex(lexer, true);
-            arg = parse_expression(lexer, statement_finalizer_set, next_sync, "expecting semicolon");
-            if (arg.error == ncl_parse_error) {
-                result.error = ncl_parse_error;
-            }
-            node = malloc(sizeof *node);
-            node->kind = ncl_cond_node;
-            node->cond.cond = arg.top;
-            node->cond.then_stmt = result.top;
-            node->cond.else_stmt = NULL;
-            result.top = node;
+        case ncl_if_kw:
+            result = parse_if_statement(lexer, statement_finalizer_set, next_sync, msg);
             break;
-        case ncl_unless_kw:
-            ncl_lex(lexer, true);
-            arg = parse_expression(lexer, statement_finalizer_set, next_sync, "expecting semicolon");
-            if (arg.error == ncl_parse_error) {
-                result.error = ncl_parse_error;
+        default: {
+            ncl_symset next_valid = ncl_symset_add_elem(statement_finalizer_set, ncl_when_kw);
+            next_valid = ncl_symset_add_elem(next_valid, ncl_unless_kw);
+            result = parse_simple_statement(lexer, next_valid, next_sync, "expecting semicolon");
+            ncl_parse_result arg;
+            ncl_node *node;
+            switch (lexer->current_kind) {
+                case ncl_when_kw:
+                    ncl_lex(lexer, true);
+                    arg = parse_expression(lexer, statement_finalizer_set, next_sync, "expecting semicolon");
+                    if (arg.error == ncl_parse_error) {
+                        result.error = ncl_parse_error;
+                    }
+                    node = malloc(sizeof *node);
+                    node->kind = ncl_cond_node;
+                    node->cond.cond = arg.top;
+                    node->cond.then_stmt = result.top;
+                    node->cond.else_stmt = NULL;
+                    result.top = node;
+                    break;
+                case ncl_unless_kw:
+                    ncl_lex(lexer, true);
+                    arg = parse_expression(lexer, statement_finalizer_set, next_sync, "expecting semicolon");
+                    if (arg.error == ncl_parse_error) {
+                        result.error = ncl_parse_error;
+                    }
+                    node = malloc(sizeof *node);
+                    node->kind = ncl_cond_node;
+                    node->cond.cond = arg.top;
+                    node->cond.then_stmt = NULL;
+                    node->cond.else_stmt = result.top;
+                    result.top = node;
+                    break;
             }
-            node = malloc(sizeof *node);
-            node->kind = ncl_cond_node;
-            node->cond.cond = arg.top;
-            node->cond.then_stmt = NULL;
-            node->cond.else_stmt = result.top;
-            result.top = node;
             break;
+        }
     }
     if (!ncl_symset_has_elem(statement_finalizer_set, lexer->current_kind)) {
         result.error = ncl_parse_error;
