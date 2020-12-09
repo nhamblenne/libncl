@@ -62,6 +62,8 @@ char const* const ncl_token_names[] = {
         "else",
         "end",
         "begin",
+        "while",
+        "loop",
 
         "last"
 };
@@ -166,6 +168,7 @@ static struct { char const* name; ncl_token_kind kind; } keywords[] = {
         { "end",    ncl_end_kw },
         { "exit",   ncl_exit_kw },
         { "if",     ncl_if_kw },
+        { "loop",   ncl_loop_kw },
         { "mod",    ncl_mod_kw },
         { "next",   ncl_next_kw },
         { "not",    ncl_not_kw },
@@ -176,6 +179,7 @@ static struct { char const* name; ncl_token_kind kind; } keywords[] = {
         { "then",   ncl_then_kw },
         { "unless", ncl_unless_kw },
         { "when",   ncl_when_kw },
+        { "while",  ncl_while_kw },
 };
 #define NUM_KEYWORDS (sizeof(keywords)/sizeof(*keywords))
 

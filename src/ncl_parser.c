@@ -100,6 +100,8 @@ static void dynamic_initialization()
     statement_starter_set = simple_statement_starter_set;
     statement_starter_set = ncl_symset_add_elem(statement_starter_set, ncl_if_kw);
     statement_starter_set = ncl_symset_add_elem(statement_starter_set, ncl_begin_kw);
+    statement_starter_set = ncl_symset_add_elem(statement_starter_set, ncl_while_kw);
+    statement_starter_set = ncl_symset_add_elem(statement_starter_set, ncl_loop_kw);
     statement_finalizer_set = ncl_symset_singleton(ncl_eol_tk);
     statement_finalizer_set = ncl_symset_add_elem(statement_finalizer_set, ncl_semicolon_tk);
     statement_finalizer_set = ncl_symset_add_elem(statement_finalizer_set, ncl_eof_tk);
@@ -709,12 +711,64 @@ static ncl_parse_result parse_if_statement(ncl_lexer *lexer, ncl_symset valid, n
 
 static ncl_parse_result parse_begin_statement(ncl_lexer *lexer, ncl_symset valid, ncl_symset sync, char const *msg)
 {
-    if (!ensure(lexer, ncl_symset_singleton(ncl_begin_kw), sync, "expecting if")) {
+    if (!ensure(lexer, ncl_symset_singleton(ncl_begin_kw), sync, "expecting begin")) {
         return (ncl_parse_result){ .error = ncl_parse_error, .top = NULL };
     }
     ncl_lex(lexer, true);
     ncl_symset next_sync = ncl_symset_add_elem(sync, ncl_end_kw);
     ncl_parse_result result = parse_statements(lexer, ncl_symset_singleton(ncl_end_kw), next_sync, "expecting end");
+    if (lexer->current_kind == ncl_end_kw) {
+        ncl_lex(lexer, !ncl_symset_has_elem(valid, ncl_eol_tk));
+        if (!ensure(lexer, valid, sync, msg)) {
+            result.error = ncl_parse_error;
+        }
+    }
+    return result;
+}
+
+static ncl_parse_result parse_loop_statement(ncl_lexer *lexer, ncl_symset valid, ncl_symset sync, char const *msg)
+{
+    if (!ensure(lexer, ncl_symset_singleton(ncl_loop_kw), sync, "expecting loop")) {
+        return (ncl_parse_result){ .error = ncl_parse_error, .top = NULL };
+    }
+    ncl_lex(lexer, true);
+    ncl_symset next_sync = ncl_symset_add_elem(sync, ncl_end_kw);
+    ncl_parse_result result = parse_statements(lexer, ncl_symset_singleton(ncl_end_kw), next_sync, "expecting end");
+    ncl_node *node = malloc(sizeof *node);
+    node->kind = ncl_loop_node;
+    node->block.block = result.top;
+    result.top = node;
+    if (lexer->current_kind == ncl_end_kw) {
+        ncl_lex(lexer, !ncl_symset_has_elem(valid, ncl_eol_tk));
+        if (!ensure(lexer, valid, sync, msg)) {
+            result.error = ncl_parse_error;
+        }
+    }
+    return result;
+}
+
+static ncl_parse_result parse_while_statement(ncl_lexer *lexer, ncl_symset valid, ncl_symset sync, char const *msg)
+{
+    if (!ensure(lexer, ncl_symset_singleton(ncl_while_kw), sync, "expecting while")) {
+        return (ncl_parse_result){ .error = ncl_parse_error, .top = NULL };
+    }
+    ncl_lex(lexer, true);
+    ncl_symset next_sync = ncl_symset_add_elem(sync, ncl_loop_kw);
+    next_sync = ncl_symset_or(next_sync, statements_starter_set);
+    ncl_parse_result result = parse_expression(lexer, ncl_symset_singleton(ncl_loop_kw), next_sync, "expecting loop");
+    ncl_node *node = malloc(sizeof *node);
+    node->kind = ncl_while_node;
+    node->while_stmt.cond = result.top;
+    node->while_stmt.block = NULL;
+    result.top = node;
+    if (lexer->current_kind == ncl_loop_kw) {
+        ncl_lex(lexer, true);
+    }
+    ncl_parse_result block = parse_statements(lexer, ncl_symset_singleton(ncl_end_kw), next_sync, "expecting end");
+    if (block.error == ncl_parse_error) {
+        result.error = ncl_parse_error;
+    }
+    node->while_stmt.block = block.top;
     if (lexer->current_kind == ncl_end_kw) {
         ncl_lex(lexer, !ncl_symset_has_elem(valid, ncl_eol_tk));
         if (!ensure(lexer, valid, sync, msg)) {
@@ -737,6 +791,12 @@ static ncl_parse_result parse_statement(ncl_lexer *lexer, ncl_symset valid, ncl_
             break;
         case ncl_begin_kw:
             result = parse_begin_statement(lexer, statement_finalizer_set, next_sync, msg);
+            break;
+        case ncl_loop_kw:
+            result = parse_loop_statement(lexer, statement_finalizer_set, next_sync, msg);
+            break;
+        case ncl_while_kw:
+            result = parse_while_statement(lexer, statement_finalizer_set, next_sync, msg);
             break;
         default: {
             ncl_symset next_valid = ncl_symset_add_elem(statement_finalizer_set, ncl_when_kw);

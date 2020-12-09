@@ -30,6 +30,8 @@ typedef enum ncl_node_kind {
     ncl_list_node,
     ncl_assign_node,
     ncl_cond_node,
+    ncl_while_node,
+    ncl_loop_node,
 } ncl_node_kind;
 
 typedef struct ncl_node_list {
@@ -79,6 +81,15 @@ typedef struct ncl_node_cond_stmt {
     ncl_node *else_stmt;
 } ncl_node_cond_stmt;
 
+typedef struct ncl_node_block_stmt {
+    ncl_node *block;
+} ncl_node_block_stmt;
+
+typedef struct ncl_node_while_stmt {
+    ncl_node *cond;
+    ncl_node *block;
+} ncl_node_while_stmt;
+
 struct ncl_node {
     ncl_node_kind kind;
     union {
@@ -91,6 +102,8 @@ struct ncl_node {
         ncl_node_exp exp;
         ncl_node_assign_stmt assign;
         ncl_node_cond_stmt cond;
+        ncl_node_block_stmt block;
+        ncl_node_while_stmt while_stmt;
     };
 };
 
