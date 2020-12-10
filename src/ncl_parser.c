@@ -17,6 +17,7 @@
 static bool dynamic_initialization_done = false;
 static ncl_symset basic_expression_starter_set;
 static ncl_symset basic_expression_closepar_set;
+static ncl_symset lambda_cont_set;
 static ncl_symset postfix_expression_incall_set;
 static ncl_symset postfix_expression_starter_set;
 static ncl_symset postfix_expression_next_set;
@@ -43,11 +44,15 @@ static ncl_symset statements_follower_set;
 
 static void dynamic_initialization()
 {
+
     basic_expression_starter_set = ncl_symset_singleton(ncl_number_tk);
     basic_expression_starter_set = ncl_symset_add_elem(basic_expression_starter_set, ncl_id_tk);
     basic_expression_starter_set = ncl_symset_add_elem(basic_expression_starter_set, ncl_string_tk);
     basic_expression_starter_set = ncl_symset_add_elem(basic_expression_starter_set, ncl_openpar_tk);
+    basic_expression_starter_set = ncl_symset_add_elem(basic_expression_starter_set, ncl_openbraces_tk);
     basic_expression_closepar_set = ncl_symset_singleton(ncl_closepar_tk);
+
+    lambda_cont_set = ncl_symset_add_elem(ncl_symset_singleton(ncl_return_tk), ncl_do_kw);
 
     postfix_expression_starter_set = basic_expression_starter_set;
     postfix_expression_next_set = ncl_symset_singleton(ncl_dot_tk);
@@ -176,6 +181,60 @@ static bool ensure(ncl_lexer *lexer, ncl_symset valid, ncl_symset sync, char con
 static ncl_parse_result parse_expression(ncl_lexer *lexer, ncl_symset valid, ncl_symset sync, char const *msg);
 static ncl_parse_result parse_statements(ncl_lexer *lexer, ncl_symset valid, ncl_symset sync, char const *msg);
 
+static ncl_parse_result parse_id_list(ncl_lexer *lexer, ncl_symset valid, ncl_symset sync, char const *msg)
+{
+    if (!ensure(lexer, ncl_symset_add_elem(valid, ncl_id_tk), sync, "expecting an identifier")) {
+        return (ncl_parse_result){ .error = ncl_parse_error, .top = NULL };
+    }
+    ncl_parse_result result;
+    result.error = ncl_parse_ok;
+    result.top = NULL;
+    ncl_node *last = NULL;
+    ncl_symset next_valid = ncl_symset_add_elem(valid, ncl_comma_tk);
+    ncl_symset next_sync = ncl_symset_add_elem(sync, ncl_comma_tk);
+    if (lexer->current_kind == ncl_id_tk) {
+        ncl_node *node = malloc(sizeof *node);
+        node->kind = ncl_list_node;
+        ncl_node *id = malloc(sizeof *node);
+        id->kind = ncl_id_node;
+        id->token.start = lexer->current_start;
+        id->token.end = lexer->current_end;
+        node->list.head = id;
+        node->list.tail = NULL;
+        result.top = node;
+        last = node;
+        ncl_lex(lexer, true);
+        ensure(lexer, next_valid, next_sync, msg);
+    } else {
+        result.error = ncl_parse_error;
+    }
+    while (lexer->current_kind == ncl_comma_tk) {
+        ncl_lex(lexer, true);
+        ensure(lexer, ncl_symset_singleton(ncl_id_tk), next_sync, "expecting an identifier");
+        if (lexer->current_kind == ncl_id_tk) {
+            ncl_node *node = malloc(sizeof *node);
+            node->kind = ncl_list_node;
+            ncl_node *id = malloc(sizeof *node);
+            id->kind = ncl_id_node;
+            id->token.start = lexer->current_start;
+            id->token.end = lexer->current_end;
+            node->list.head = id;
+            node->list.tail = NULL;
+            if (last == NULL) {
+                result.top = node;
+            } else {
+                last->list.tail = node;
+            }
+            last = node;
+            ncl_lex(lexer, true);
+            ensure(lexer, next_valid, next_sync, msg);
+        } else {
+            result.error = ncl_parse_error;
+        }
+    }
+    return result;
+}
+
 static ncl_parse_result parse_basic_expression(ncl_lexer *lexer, ncl_symset valid, ncl_symset sync, char const *msg)
 {
     if (!ensure(lexer, basic_expression_starter_set, sync, "can't start a basic expression")) {
@@ -211,6 +270,37 @@ static ncl_parse_result parse_basic_expression(ncl_lexer *lexer, ncl_symset vali
             next_sync = ncl_symset_remove_elem(next_sync, ncl_eol_tk);
             result = parse_expression(lexer, basic_expression_closepar_set, next_sync, "expecting closing parenthesis");
             skip = lexer->current_kind == ncl_closepar_tk;
+            break;
+        case ncl_openbraces_tk:
+            ncl_lex(lexer, true);
+            next_sync = ncl_symset_or(lambda_cont_set, sync);
+            next_sync = ncl_symset_add_elem(next_sync, ncl_closebraces_tk);
+            result = parse_id_list(lexer, lambda_cont_set, next_sync, "expecting do or =>");
+            ncl_node *node = malloc(sizeof *node);
+            node->lambda.args = result.top;
+            result.top = node;
+            ncl_parse_result content;
+            switch (lexer->current_kind) {
+                case ncl_return_tk:
+                    result.top->kind = ncl_flambda_node;
+                    ncl_lex(lexer, true);
+                    content = parse_expression(lexer, ncl_symset_singleton(ncl_closebraces_tk), next_sync, "expecting }");
+                    if (content.error == ncl_parse_error) {
+                        result.error = ncl_parse_error;
+                    }
+                    result.top->lambda.content = content.top;
+                    break;
+                case ncl_do_kw:
+                    node->kind = ncl_plambda_node;
+                    ncl_lex(lexer, true);
+                    content = parse_statements(lexer, ncl_symset_singleton(ncl_closebraces_tk), next_sync, "expecting }");
+                    if (content.error == ncl_parse_error) {
+                        result.error = ncl_parse_error;
+                    }
+                    result.top->lambda.content = content.top;
+                    break;
+            }
+            skip = lexer->current_kind == ncl_closebraces_tk;
             break;
     }
     if (skip) {

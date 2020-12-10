@@ -44,6 +44,9 @@ char const* const ncl_token_names[] = {
         ">",
         ":=",
         ":",
+        "=>",
+        "{",
+        "}",
 
         "div",
         "mod",
@@ -67,6 +70,7 @@ char const* const ncl_token_names[] = {
         "loop",
         "for",
         "in",
+        "do",
 
         "last"
 };
@@ -123,8 +127,11 @@ static struct { char const* name; ncl_token_kind kind; } predefined_operators[] 
         { "<",  ncl_lt_tk },
         { "<=", ncl_le_tk },
         { "==", ncl_eq_tk },
+        { "=>", ncl_return_tk },
         { ">",  ncl_gt_tk },
         { ">=", ncl_ge_tk },
+        { "{",  ncl_openbraces_tk },
+        { "}",  ncl_closebraces_tk },
 };
 #define NUM_PREDEFINED_OPERATORS (sizeof(predefined_operators)/sizeof(*predefined_operators))
 
@@ -166,6 +173,7 @@ static struct { char const* name; ncl_token_kind kind; } keywords[] = {
         { "and",    ncl_and_kw },
         { "begin",  ncl_begin_kw },
         { "div",    ncl_idiv_kw },
+        { "do",     ncl_do_kw },
         { "else",   ncl_else_kw },
         { "elsif",  ncl_elsif_kw },
         { "end",    ncl_end_kw },
@@ -520,7 +528,7 @@ start:;
                 ++cur;
                 lexer->current_kind = ncl_reserved_tk;
             } else {
-                lexer->current_kind = ncl_reserved_tk;
+                lexer->current_kind = ncl_openbraces_tk;
             }
             break;
 
@@ -567,8 +575,12 @@ start:;
             lexer->current_kind = ncl_comma_tk;
             break;
 
+        case '}':
+            lexer->current_kind = ncl_closebraces_tk;
+            break;
+
         case '\'': case '?':  case '@':
-        case ']':  case '^': case '`': case '}':
+        case ']':  case '^': case '`':
             lexer->current_kind = ncl_reserved_tk;
             break;
 

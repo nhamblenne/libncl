@@ -41,6 +41,9 @@ typedef enum ncl_token_kind {
     ncl_gt_tk,
     ncl_assign_tk,
     ncl_colon_tk,
+    ncl_return_tk,
+    ncl_openbraces_tk,
+    ncl_closebraces_tk,
 
     ncl_idiv_kw,
     ncl_mod_kw,
@@ -64,6 +67,7 @@ typedef enum ncl_token_kind {
     ncl_loop_kw,
     ncl_for_kw,
     ncl_in_kw,
+    ncl_do_kw,
 
     ncl_last_tk
 } ncl_token_kind;

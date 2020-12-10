@@ -120,8 +120,15 @@ void show_node(int indent, ncl_node *top)
             case ncl_label_node:
                 printf("%*sLABEL %.*s\n", indent, "", (int)(top->token.end-top->token.start), top->token.start);
                 break;
+            case ncl_flambda_node:
+            case ncl_plambda_node:
+                printf("%*sLAMBDA %s\n", indent, "", (top->kind == ncl_flambda_node ? "FUNC" : "PROC"));
+                show_node(indent + 4, top->lambda.args);
+                printf("%*s  RESULT\n", indent, "");
+                show_node(indent + 4, top->lambda.content);
+                break;
             default:
-                printf("%*s<!!! UNKNOWN !!!>\n", indent, "");
+                printf("%*s<!!! UNKNOWN %d !!!>\n", indent, "", top->kind);
                 break;
         }
     }
@@ -147,6 +154,11 @@ int main() {
                        "while cond loop x := x + 1; y := y - 1; end\n"
                        "for id in keys(foo) loop print id; x := x + 1; end\n"
                        "lo: loop a(x); exit lo when foo; b(y); end\n"
+                       "apply array { x => x + 2 }\n"
+                       "foreach array { x, y do\n"
+                       "foo x\n"
+                       "bar y\n"
+                       "}\n"
     );
     show_node(0, result.top);
     ncl_free_node(result.top);
