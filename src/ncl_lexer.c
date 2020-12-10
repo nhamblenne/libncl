@@ -64,6 +64,8 @@ char const* const ncl_token_names[] = {
         "begin",
         "while",
         "loop",
+        "for",
+        "in",
 
         "last"
 };
@@ -167,7 +169,9 @@ static struct { char const* name; ncl_token_kind kind; } keywords[] = {
         { "elsif",  ncl_elsif_kw },
         { "end",    ncl_end_kw },
         { "exit",   ncl_exit_kw },
+        { "for",    ncl_for_kw },
         { "if",     ncl_if_kw },
+        { "in",     ncl_in_kw },
         { "loop",   ncl_loop_kw },
         { "mod",    ncl_mod_kw },
         { "next",   ncl_next_kw },

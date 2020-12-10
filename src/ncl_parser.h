@@ -32,6 +32,7 @@ typedef enum ncl_node_kind {
     ncl_cond_node,
     ncl_while_node,
     ncl_loop_node,
+    ncl_for_node,
 } ncl_node_kind;
 
 typedef struct ncl_node_list {
@@ -85,6 +86,12 @@ typedef struct ncl_node_block_stmt {
     ncl_node *block;
 } ncl_node_block_stmt;
 
+typedef struct ncl_node_for_stmt {
+    ncl_node *var;
+    ncl_node *exp;
+    ncl_node *block;
+} ncl_node_for_stmt;
+
 typedef struct ncl_node_while_stmt {
     ncl_node *cond;
     ncl_node *block;
@@ -104,6 +111,7 @@ struct ncl_node {
         ncl_node_cond_stmt cond;
         ncl_node_block_stmt block;
         ncl_node_while_stmt while_stmt;
+        ncl_node_for_stmt for_stmt;
     };
 };
 

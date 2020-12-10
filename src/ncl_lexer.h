@@ -61,6 +61,8 @@ typedef enum ncl_token_kind {
     ncl_begin_kw,
     ncl_while_kw,
     ncl_loop_kw,
+    ncl_for_kw,
+    ncl_in_kw,
 
     ncl_last_tk
 } ncl_token_kind;
