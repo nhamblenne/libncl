@@ -40,6 +40,7 @@ typedef enum ncl_token_kind {
     ncl_ge_tk,
     ncl_gt_tk,
     ncl_assign_tk,
+    ncl_colon_tk,
 
     ncl_idiv_kw,
     ncl_mod_kw,

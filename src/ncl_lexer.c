@@ -43,6 +43,7 @@ char const* const ncl_token_names[] = {
         ">=",
         ">",
         ":=",
+        ":",
 
         "div",
         "mod",
@@ -495,7 +496,7 @@ start:;
                 ++cur;
                 lexer->current_kind = ncl_reserved_tk;
             } else {
-                lexer->current_kind = ncl_reserved_tk;
+                lexer->current_kind = ncl_colon_tk;
             }
             break;
 

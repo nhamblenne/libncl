@@ -117,6 +117,9 @@ void show_node(int indent, ncl_node *top)
                 printf("%*s  LOOP\n", indent, "");
                 show_node(indent + 4, top->for_stmt.block);
                 break;
+            case ncl_label_node:
+                printf("%*sLABEL %.*s\n", indent, "", (int)(top->token.end-top->token.start), top->token.start);
+                break;
             default:
                 printf("%*s<!!! UNKNOWN !!!>\n", indent, "");
                 break;
@@ -143,6 +146,7 @@ int main() {
                        "loop\na\nb := x;end\n"
                        "while cond loop x := x + 1; y := y - 1; end\n"
                        "for id in keys(foo) loop print id; x := x + 1; end\n"
+                       "lo: loop a(x); exit lo when foo; b(y); end\n"
     );
     show_node(0, result.top);
     ncl_free_node(result.top);

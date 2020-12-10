@@ -850,6 +850,20 @@ static ncl_parse_result parse_statement(ncl_lexer *lexer, ncl_symset valid, ncl_
         case ncl_for_kw:
             result = parse_for_statement(lexer, statement_finalizer_set, next_sync, msg);
             break;
+        case ncl_id_tk:
+            if (look_ahead(lexer, !ncl_symset_has_elem(valid, ncl_eol_tk)) == ncl_colon_tk) {
+                result.error = ncl_parse_ok;
+                result.top = malloc(sizeof *result.top);
+                result.top->kind = ncl_label_node;
+                result.top->token.start = lexer->current_start;
+                result.top->token.end = lexer->current_end;
+                ncl_lex(lexer, !ncl_symset_has_elem(valid, ncl_eol_tk));
+                ncl_lex(lexer, !ncl_symset_has_elem(valid, ncl_eol_tk));
+                if (!ensure(lexer, valid, sync, msg)) {
+                    result.error = ncl_parse_error;
+                }
+                return result;
+            }
         default: {
             ncl_symset next_valid = ncl_symset_add_elem(statement_finalizer_set, ncl_when_kw);
             next_valid = ncl_symset_add_elem(next_valid, ncl_unless_kw);

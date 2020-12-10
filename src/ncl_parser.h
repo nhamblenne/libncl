@@ -33,6 +33,7 @@ typedef enum ncl_node_kind {
     ncl_while_node,
     ncl_loop_node,
     ncl_for_node,
+    ncl_label_node,
 } ncl_node_kind;
 
 typedef struct ncl_node_list {
