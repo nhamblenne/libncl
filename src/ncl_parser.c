@@ -178,6 +178,49 @@ static bool ensure(ncl_lexer *lexer, ncl_symset valid, ncl_symset sync, char con
     }
 }
 
+static ncl_node *allocate_list_node(ncl_node *head, ncl_node *tail)
+{
+    ncl_node *result = malloc(sizeof *result);
+    result->kind = ncl_list_node;
+    result->list.head = head;
+    result->list.tail = tail;
+    return result;
+}
+
+static ncl_node *allocate_token_node(ncl_lexer *lexer)
+{
+    ncl_node *result = malloc(sizeof *result);
+    switch (lexer->current_kind) {
+        case ncl_id_tk:     result->kind = ncl_id_node; break;
+        case ncl_number_tk: result->kind = ncl_number_node; break;
+        case ncl_string_tk: result->kind = ncl_string_node; break;
+        default:
+            assert(false);
+    }
+    result->token.start = lexer->current_start;
+    result->token.end = lexer->current_end;
+    return result;
+}
+
+static ncl_node *allocate_unary_expression(ncl_token_kind op, ncl_node *arg)
+{
+    ncl_node *result = malloc(sizeof *result);
+    result->kind = ncl_unary_node;
+    result->unary.op = op;
+    result->unary.arg = arg;
+    return result;
+}
+
+static ncl_node *allocate_binary_expression(ncl_token_kind op, ncl_node *left, ncl_node *right)
+{
+    ncl_node *result = malloc(sizeof *result);
+    result->kind = ncl_binary_node;
+    result->binary.op = op;
+    result->binary.left = left;
+    result->binary.right = right;
+    return result;
+}
+
 static ncl_parse_result parse_expression(ncl_lexer *lexer, ncl_symset valid, ncl_symset sync, char const *msg);
 static ncl_parse_result parse_statements(ncl_lexer *lexer, ncl_symset valid, ncl_symset sync, char const *msg);
 
@@ -193,16 +236,9 @@ static ncl_parse_result parse_id_list(ncl_lexer *lexer, ncl_symset valid, ncl_sy
     ncl_symset next_valid = ncl_symset_add_elem(valid, ncl_comma_tk);
     ncl_symset next_sync = ncl_symset_add_elem(sync, ncl_comma_tk);
     if (lexer->current_kind == ncl_id_tk) {
-        ncl_node *node = malloc(sizeof *node);
-        node->kind = ncl_list_node;
-        ncl_node *id = malloc(sizeof *node);
-        id->kind = ncl_id_node;
-        id->token.start = lexer->current_start;
-        id->token.end = lexer->current_end;
-        node->list.head = id;
-        node->list.tail = NULL;
-        result.top = node;
-        last = &node->list.tail;
+        ncl_node *id = allocate_token_node(lexer);
+        result.top = allocate_list_node(id, NULL);
+        last = &result.top->list.tail;
         ncl_lex(lexer, true);
         ensure(lexer, next_valid, next_sync, msg);
     } else {
@@ -212,14 +248,8 @@ static ncl_parse_result parse_id_list(ncl_lexer *lexer, ncl_symset valid, ncl_sy
         ncl_lex(lexer, true);
         ensure(lexer, ncl_symset_singleton(ncl_id_tk), next_sync, "expecting an identifier");
         if (lexer->current_kind == ncl_id_tk) {
-            ncl_node *node = malloc(sizeof *node);
-            node->kind = ncl_list_node;
-            ncl_node *id = malloc(sizeof *node);
-            id->kind = ncl_id_node;
-            id->token.start = lexer->current_start;
-            id->token.end = lexer->current_end;
-            node->list.head = id;
-            node->list.tail = NULL;
+            ncl_node *id = allocate_token_node(lexer);
+            ncl_node *node = allocate_list_node(id, NULL);
             *last = node;
             last = &node->list.tail;
             ncl_lex(lexer, true);
@@ -243,22 +273,13 @@ static ncl_parse_result parse_basic_expression(ncl_lexer *lexer, ncl_symset vali
     result.top = NULL;
     switch (lexer->current_kind) {
         case ncl_number_tk:
-            result.top = malloc(sizeof *result.top);
-            result.top->kind = ncl_number_node;
-            result.top->token.start = lexer->current_start;
-            result.top->token.end = lexer->current_end;
+            result.top = allocate_token_node(lexer);
             break;
         case ncl_id_tk:
-            result.top = malloc(sizeof *result.top);
-            result.top->kind = ncl_id_node;
-            result.top->token.start = lexer->current_start;
-            result.top->token.end = lexer->current_end;
+            result.top = allocate_token_node(lexer);
             break;
         case ncl_string_tk:
-            result.top = malloc(sizeof *result.top);
-            result.top->kind = ncl_string_node;
-            result.top->token.start = lexer->current_start;
-            result.top->token.end = lexer->current_end;
+            result.top = allocate_token_node(lexer);
             break;
         case ncl_openpar_tk:
             ncl_lex(lexer, true);
@@ -353,10 +374,7 @@ static ncl_parse_result parse_postfix_expression(ncl_lexer *lexer, ncl_symset va
                         if (arg.error == ncl_parse_error) {
                             result.error = ncl_parse_error;
                         }
-                        node = malloc(sizeof *node);
-                        node->kind = ncl_args_node;
-                        node->list.head = arg.top;
-                        node->list.tail = NULL;
+                        node = allocate_list_node(arg.top, NULL);
                         *last = node;
                         last = &node->list.tail;
                     } while (lexer->current_kind == ncl_comma_tk);
@@ -406,11 +424,7 @@ static ncl_parse_result parse_unary_expression(ncl_lexer *lexer, ncl_symset vali
         ncl_token_kind oper = lexer->current_kind;
         ncl_lex(lexer, true);
         ncl_parse_result result = parse_unary_expression(lexer, valid, sync, msg);
-        ncl_node *node = malloc(sizeof *node);
-        node->kind = ncl_unary_node;
-        node->unary.op = oper;
-        node->unary.arg = result.top;
-        result.top = node;
+        result.top = allocate_unary_expression(oper, result.top);
         return result;
     }
 }
@@ -428,12 +442,7 @@ static ncl_parse_result parse_multiplicative_expression(ncl_lexer *lexer, ncl_sy
         ncl_token_kind oper = lexer->current_kind;
         ncl_lex(lexer, true);
         ncl_parse_result arg = parse_unary_expression(lexer, next_valid, next_sync, msg);
-        ncl_node *node = malloc(sizeof *node);
-        node->kind = ncl_binary_node;
-        node->binary.op = oper;
-        node->binary.left = result.top;
-        node->binary.right = arg.top;
-        result.top = node;
+        result.top = allocate_binary_expression(oper, result.top, arg.top);
         if (arg.error == ncl_parse_error) {
             result.error = ncl_parse_error;
         }
@@ -454,12 +463,7 @@ static ncl_parse_result parse_additive_expression(ncl_lexer *lexer, ncl_symset v
         ncl_token_kind oper = lexer->current_kind;
         ncl_lex(lexer, true);
         ncl_parse_result arg = parse_multiplicative_expression(lexer, next_valid, next_sync, msg);
-        ncl_node *node = malloc(sizeof *node);
-        node->kind = ncl_binary_node;
-        node->binary.op = oper;
-        node->binary.left = result.top;
-        node->binary.right = arg.top;
-        result.top = node;
+        result.top = allocate_binary_expression(oper, result.top, arg.top);
         if (arg.error == ncl_parse_error) {
             result.error = ncl_parse_error;
         }
@@ -480,12 +484,7 @@ static ncl_parse_result parse_compare_expression(ncl_lexer *lexer, ncl_symset va
         ncl_token_kind oper = lexer->current_kind;
         ncl_lex(lexer, true);
         ncl_parse_result arg = parse_additive_expression(lexer, next_valid, next_sync, msg);
-        ncl_node *node = malloc(sizeof *node);
-        node->kind = ncl_binary_node;
-        node->binary.op = oper;
-        node->binary.left = result.top;
-        node->binary.right = arg.top;
-        result.top = node;
+        result.top = allocate_binary_expression(oper, result.top, arg.top);
         if (arg.error == ncl_parse_error) {
             result.error = ncl_parse_error;
         }
@@ -504,11 +503,7 @@ static ncl_parse_result parse_unary_boolean_expression(ncl_lexer *lexer, ncl_sym
         ncl_token_kind oper = lexer->current_kind;
         ncl_lex(lexer, true);
         ncl_parse_result result = parse_unary_boolean_expression(lexer, valid, sync, msg);
-        ncl_node *node = malloc(sizeof *node);
-        node->kind = ncl_unary_node;
-        node->unary.op = oper;
-        node->unary.arg = result.top;
-        result.top = node;
+        result.top = allocate_unary_expression(oper, result.top);
         return result;
     }
 }
@@ -526,12 +521,7 @@ static ncl_parse_result parse_binary_boolean_expression(ncl_lexer *lexer, ncl_sy
         ncl_token_kind oper = lexer->current_kind;
         ncl_lex(lexer, true);
         ncl_parse_result arg = parse_unary_boolean_expression(lexer, next_valid, next_sync, msg);
-        ncl_node *node = malloc(sizeof *node);
-        node->kind = ncl_binary_node;
-        node->binary.op = oper;
-        node->binary.left = result.top;
-        node->binary.right = arg.top;
-        result.top = node;
+        result.top = allocate_binary_expression(oper, result.top, arg.top);
         if (arg.error == ncl_parse_error) {
             result.error = ncl_parse_error;
         }
@@ -553,58 +543,32 @@ static ncl_parse_result parse_assignation(ncl_lexer *lexer, ncl_parse_result exp
     ncl_symset next_sync = ncl_symset_or(assignment_cont_set, sync);
     result.top = malloc(sizeof *result.top);
     result.top->kind = ncl_assign_node;
-    result.top->assign.to = exp.top;
+    result.top->assign.to = allocate_list_node(exp.top, NULL);
     result.top->assign.what = NULL;
-    ncl_node *last = NULL;
+    ncl_node **last = &result.top->assign.to->list.tail;
     while (lexer->current_kind == ncl_comma_tk) {
         ncl_lex(lexer, true);
         ncl_parse_result arg = parse_expression(lexer, assignment_cont_set, next_sync, "expecting ':='");
         if (arg.error == ncl_parse_error) {
             result.error = ncl_parse_error;
         }
-        ncl_node *node = malloc(sizeof *node);
-        node->kind = ncl_list_node;
-        node->list.head = arg.top;
-        node->list.tail = NULL;
-        if (last == NULL) {
-            ncl_node *head = malloc(sizeof *head);
-            head->kind = ncl_list_node;
-            head->list.head = result.top->assign.to;
-            head->list.tail = node;
-            result.top->assign.to = head;
-        } else {
-            last->list.tail = node;
-        }
-        last = node;
+        ncl_node *node = allocate_list_node(arg.top, NULL);
+        *last = node;
+        last = &node->list.tail;
     }
     if (lexer->current_kind == ncl_assign_tk) {
         ncl_symset next_valid = ncl_symset_add_elem(valid, ncl_comma_tk);
         next_sync = ncl_symset_or(next_valid, sync);
+        last = &result.top->assign.what;
         do {
             ncl_lex(lexer, true);
             ncl_parse_result arg = parse_expression(lexer, next_valid, next_sync, msg);
             if (arg.error == ncl_parse_error) {
                 result.error = ncl_parse_error;
             }
-            if (result.top->assign.what == NULL) {
-                result.top->assign.what = arg.top;
-                last = NULL;
-            } else {
-                ncl_node *node = malloc(sizeof *node);
-                node->kind = ncl_list_node;
-                node->list.head = arg.top;
-                node->list.tail = NULL;
-                if (last == NULL) {
-                    ncl_node *head = malloc(sizeof *head);
-                    head->kind = ncl_list_node;
-                    head->list.head = result.top->assign.what;
-                    head->list.tail = node;
-                    result.top->assign.what = head;
-                } else {
-                    last->list.tail = node;
-                }
-                last = node;
-            }
+            ncl_node *node = allocate_list_node(arg.top, NULL);
+            *last = node;
+            last = &node->list.tail;
         } while (lexer->current_kind == ncl_comma_tk);
     }
     return result;
@@ -631,10 +595,7 @@ static ncl_parse_result parse_proc_call(ncl_lexer *lexer, ncl_parse_result exp, 
         if (arg.error == ncl_parse_error) {
             result.error = ncl_parse_error;
         }
-        ncl_node *node = malloc(sizeof *node);
-        node->kind = ncl_args_node;
-        node->list.head = arg.top;
-        node->list.tail = NULL;
+        ncl_node *node = allocate_list_node(arg.top, NULL);
         *last = node;
         last = &node->list.tail;
         if (ncl_symset_has_elem(expression_starter_set, lexer->current_kind)) {
@@ -991,33 +952,18 @@ static ncl_parse_result parse_statements(ncl_lexer *lexer, ncl_symset valid, ncl
     if (!ensure(lexer, statements_starter_set, sync, "can't start a statement")) {
         return (ncl_parse_result){ .error = ncl_parse_error, .top = NULL };
     }
-    ncl_parse_result result = { .error = ncl_parse_none, .top = NULL };
-    ncl_node *last = NULL;
+    ncl_parse_result result = { .error = ncl_parse_ok, .top = NULL };
+    ncl_node **last = &result.top;
     ncl_symset next_valid = ncl_symset_or(valid, statement_starter_set);
     ncl_symset next_sync = ncl_symset_or(next_valid, sync);
     while (ncl_symset_has_elem(statement_starter_set, lexer->current_kind)) {
         ncl_parse_result current = parse_statement(lexer, next_valid, next_sync, msg);
-        if (result.error == ncl_parse_none) {
-            result = current;
-        } else {
-            ncl_node *node = malloc(sizeof *node);
-            node->kind = ncl_statements_node;
-            node->list.head = current.top;
-            node->list.tail = NULL;
-            if (last == NULL) {
-                ncl_node *prev = malloc(sizeof *prev);
-                prev->kind = ncl_statements_node;
-                prev->list.head = result.top;
-                prev->list.tail = node;
-                result.top = prev;
-            } else {
-                last->list.tail = node;
-            }
-            last = node;
-            if (current.error == ncl_parse_error) {
-                result.error = current.error;
-            }
+        if (current.error == ncl_parse_error) {
+            result.error = current.error;
         }
+        ncl_node *node = allocate_list_node(current.top, NULL);
+        *last = node;
+        last = &node->list.tail;
     }
     return result;
 }
@@ -1049,14 +995,6 @@ void ncl_free_node(ncl_node *top)
         case ncl_id_node:
         case ncl_string_node:
             break;
-        case ncl_statements_node:
-            ncl_free_node(top->list.head);
-            for (ncl_node *cur = top->list.tail, *next; cur != NULL; cur = next) {
-                next = cur->list.tail;
-                ncl_free_node(cur->list.head);
-                free(cur);
-            }
-            break;
         case ncl_field_node:
             ncl_free_node(top->field.exp);
             break;
@@ -1065,13 +1003,6 @@ void ncl_free_node(ncl_node *top)
             ncl_free_node(top->call.func);
             if (top->call.args != NULL) {
                 ncl_free_node(top->call.args);
-            }
-            break;
-        case ncl_args_node:
-            for (ncl_node *cur = top->list.tail, *next; cur != NULL; cur = next) {
-                next = cur->list.tail;
-                ncl_free_node(cur->list.head);
-                free(cur);
             }
             break;
         case ncl_unary_node:

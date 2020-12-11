@@ -17,12 +17,6 @@ void show_node(int indent, ncl_node *top)
             case ncl_error_node:
                 printf("%*sERROR\n", indent, "");
                 break;
-            case ncl_statements_node:
-                printf("%*sSTATEMENTS\n", indent, "");
-                for (ncl_node *cur = top; cur != NULL; cur = cur->list.tail) {
-                    show_node(indent + 4, cur->list.head);
-                }
-                break;
             case ncl_number_node:
                 printf("%*sNUMBER %.*s\n", indent, "", (int)(top->token.end-top->token.start), top->token.start);
                 break;

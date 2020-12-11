@@ -13,14 +13,12 @@ typedef struct ncl_node ncl_node;
 
 typedef enum ncl_node_kind {
     ncl_error_node,
-    ncl_statements_node,
     ncl_number_node,
     ncl_id_node,
     ncl_string_node,
     ncl_field_node,
     ncl_call_node,
     ncl_call1_node,
-    ncl_args_node,
     ncl_unary_node,
     ncl_binary_node,
     ncl_pass_node,
