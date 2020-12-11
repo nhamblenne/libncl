@@ -33,7 +33,7 @@ void show_node(int indent, ncl_node *top)
                 printf("%*sSTRING %.*s\n", indent, "", (int)(top->token.end-top->token.start), top->token.start);
                 break;
             case ncl_field_node:
-                printf("%*sFIELD %.*s of\n", indent, "", (int)(top->field.end-top->field.start), top->field.start);
+                printf("%*sFIELD %.*s OF\n", indent, "", (int)(top->field.end-top->field.start), top->field.start);
                 show_node(indent + 4, top->field.exp);
                 break;
             case ncl_call_node:
@@ -154,8 +154,8 @@ int main() {
                        "while cond loop x := x + 1; y := y - 1; end\n"
                        "for id in keys(foo) loop print id; x := x + 1; end\n"
                        "lo: loop a(x); exit lo when foo; b(y); end\n"
-                       "apply array { x => x + 2 }\n"
-                       "foreach array { x, y do\n"
+                       "apply array, { x => x + 2 }\n"
+                       "foreach array, { x, y do\n"
                        "foo x\n"
                        "bar y\n"
                        "}\n"

@@ -189,7 +189,7 @@ static ncl_parse_result parse_id_list(ncl_lexer *lexer, ncl_symset valid, ncl_sy
     ncl_parse_result result;
     result.error = ncl_parse_ok;
     result.top = NULL;
-    ncl_node *last = NULL;
+    ncl_node **last = &result.top;
     ncl_symset next_valid = ncl_symset_add_elem(valid, ncl_comma_tk);
     ncl_symset next_sync = ncl_symset_add_elem(sync, ncl_comma_tk);
     if (lexer->current_kind == ncl_id_tk) {
@@ -202,7 +202,7 @@ static ncl_parse_result parse_id_list(ncl_lexer *lexer, ncl_symset valid, ncl_sy
         node->list.head = id;
         node->list.tail = NULL;
         result.top = node;
-        last = node;
+        last = &node->list.tail;
         ncl_lex(lexer, true);
         ensure(lexer, next_valid, next_sync, msg);
     } else {
@@ -220,12 +220,8 @@ static ncl_parse_result parse_id_list(ncl_lexer *lexer, ncl_symset valid, ncl_sy
             id->token.end = lexer->current_end;
             node->list.head = id;
             node->list.tail = NULL;
-            if (last == NULL) {
-                result.top = node;
-            } else {
-                last->list.tail = node;
-            }
-            last = node;
+            *last = node;
+            last = &node->list.tail;
             ncl_lex(lexer, true);
             ensure(lexer, next_valid, next_sync, msg);
         } else {
@@ -324,7 +320,7 @@ static ncl_parse_result parse_postfix_expression(ncl_lexer *lexer, ncl_symset va
     while (ncl_symset_has_elem(postfix_expression_next_set, lexer->current_kind)) {
         ncl_symset next_sync;
         ncl_node *node = malloc(sizeof *node);
-        ncl_node *last = NULL;
+        ncl_node **last = NULL;
         switch (lexer->current_kind) {
             case ncl_dot_tk:
                 ncl_lex(lexer, true);
@@ -345,7 +341,7 @@ static ncl_parse_result parse_postfix_expression(ncl_lexer *lexer, ncl_symset va
                 node->call.func = result.top;
                 node->call.args = NULL;
                 result.top = node;
-                last = NULL;
+                last = &result.top->call.args;
                 if (look_ahead(lexer, true) == ncl_closepar_tk) {
                     ncl_lex(lexer, true);
                 } else {
@@ -361,12 +357,8 @@ static ncl_parse_result parse_postfix_expression(ncl_lexer *lexer, ncl_symset va
                         node->kind = ncl_args_node;
                         node->list.head = arg.top;
                         node->list.tail = NULL;
-                        if (last != NULL) {
-                            last->list.tail = node;
-                        } else {
-                            result.top->call.args = node;
-                        }
-                        last = node;
+                        *last = node;
+                        last = &node->list.tail;
                     } while (lexer->current_kind == ncl_comma_tk);
                 }
                 if (lexer->current_kind == ncl_closepar_tk) {
@@ -390,20 +382,15 @@ static ncl_parse_result parse_unary_call_expression(ncl_lexer *lexer, ncl_symset
     }
     ncl_symset next_valid = ncl_symset_or(postfix_expression_starter_set, valid);
     ncl_parse_result result = parse_postfix_expression(lexer, next_valid, sync, msg);
-    ncl_node *last = NULL;
+    ncl_node **last = &result.top;
     while (ncl_symset_has_elem(postfix_expression_starter_set, lexer->current_kind)) {
         ncl_parse_result arg = parse_postfix_expression(lexer, next_valid, sync, msg);
         ncl_node *node = malloc(sizeof *node);
         node->kind = ncl_call1_node;
         node->call.args = arg.top;
-        if (last == NULL) {
-            node->call.func = result.top;
-            result.top = node;
-        } else {
-            node->call.func = last->call.args;
-            last->call.args = node;
-        }
-        last = node;
+        node->call.func = *last;
+        *last = node;
+        last = &node->call.args;
     }
     return result;
 }
@@ -633,7 +620,7 @@ static ncl_parse_result parse_proc_call(ncl_lexer *lexer, ncl_parse_result exp, 
     result.top->kind = ncl_call_node;
     result.top->call.func = exp.top;
     result.top->call.args = NULL;
-    ncl_node *last = NULL;
+    ncl_node **last = &result.top->call.args;
     while (ncl_symset_has_elem(expression_starter_set, lexer->current_kind)
            || lexer->current_kind == ncl_comma_tk)
     {
@@ -648,12 +635,8 @@ static ncl_parse_result parse_proc_call(ncl_lexer *lexer, ncl_parse_result exp, 
         node->kind = ncl_args_node;
         node->list.head = arg.top;
         node->list.tail = NULL;
-        if (last != NULL) {
-            last->list.tail = node;
-        } else {
-            result.top->call.args = node;
-        }
-        last = node;
+        *last = node;
+        last = &node->list.tail;
         if (ncl_symset_has_elem(expression_starter_set, lexer->current_kind)) {
             lexer->error_func(lexer, "expecting ,");
             result.error = ncl_parse_error;
