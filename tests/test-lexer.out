@@ -1,0 +1,99 @@
+eol       
+id         => |a|
+id         => |a|
+eol       
+id         => |a|
+id         => |ab|
+id         => |a56b|
+id         => |$xx_67|
+id         => |_67A|
+id         => |a78$ZZ|
+eol       
++          => |+|
+operator   => |+-|
+operator   => |<=>|
+eol       
+number     => |1|
+number     => |1.12|
+number     => |1E+2|
+number     => |1.2E+5|
+number     => |0FF#16|
+eol       
+string     => |"string"|
+string     => |"string\"string"|
+string     => |"string $"|
+eol       
+istring    => |$"string"|
+istring    => |$"string\$string"|
+eol       
+istring_start => |$"string$(|
+istring_start => |$"string \$ \" string $(|
+eol       
+istring_cont => |)$ string $(|
+istring_cont => |)$ string \$ \" string $(|
+eol       
+istring_end => |)$ string "|
+istring_end => |)$ string \$ \" string "|
+eol       
+zstring    => |\\ zig string|
+eol       
+zstring    => |\\ zig string $ \|
+eol       
+;          => |;|
+(          => |(|
+)          => |)|
+.          => |.|
+,          => |,|
++          => |+|
+-          => |-|
+*          => |*|
+/          => |/|
+&          => |&|
+==         => |==|
+!=         => |!=|
+<          => |<|
+<=         => |<=|
+=>         => |=>|
+>          => |>|
+:=         => |:=|
+:          => |:|
+=>         => |=>|
+{          => |{|
+}          => |}|
+eol       
+div        => |div|
+mod        => |mod|
+rem        => |rem|
+not        => |not|
+and        => |and|
+or         => |or|
+pass       => |pass|
+exit       => |exit|
+next       => |next|
+return     => |return|
+when       => |when|
+unless     => |unless|
+if         => |if|
+then       => |then|
+elsif      => |elsif|
+else       => |else|
+end        => |end|
+begin      => |begin|
+eol       
+while      => |while|
+loop       => |loop|
+for        => |for|
+in         => |in|
+do         => |do|
+eol       
+eol       
+id         => |a|
++          => |+|
+id         => |b|
+id         => |a|
++          => |+|
+number     => |1|
+number     => |1|
++          => |+|
+number     => |1|
+eol       

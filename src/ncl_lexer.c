@@ -262,7 +262,7 @@ static char const *terminate_string(ncl_lexer *lexer, char const *cur, ncl_token
         } else if (*cur == '\\') {
             /* todo: validate other escape sequences */
             ++cur;
-            if (cur != end && *cur == '"') {
+            if (cur != end && (*cur == '"' || *cur == '$')) {
                 ++cur;
             }
         } else if (*cur == '$') {

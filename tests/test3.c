@@ -57,7 +57,7 @@ int main()
     lexer.line_number = 1;
     lexer.error_func = error_func;
     while (tk = ncl_lex(&lexer, true),  tk != ncl_eof_tk) {
-        printf("%d, |%.*s|\n", tk, (int)(lexer.current_end - lexer.current_start), lexer.current_start);
+        printf("%s, |%.*s|\n", ncl_token_names[tk], (int)(lexer.current_end - lexer.current_start), lexer.current_start);
         lexer.buffer_pos = lexer.current_end;
     }
     return 0;
