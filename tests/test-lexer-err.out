@@ -1,0 +1,151 @@
+
+Error line 1:
+(# un-terminated in-line comment
+^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+Comment started by (# may not span several lines
+
+eol       
+
+Error line 2:
+(# un-terminated in-line comment with ending #
+^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+Comment started by (# may not span several lines
+
+eol       
+
+Error line 3:
+"un-terminated string
+^~~~~~~~~~~~~~~~~~~~^
+Invalid string
+
+error      => |"un-terminated string|
+eol       
+
+Error line 4:
+"un-terminated string with ending ;
+^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+Invalid string
+
+error      => |"un-terminated string with ending ;|
+eol       
+
+Error line 5:
+"un-terminated string with ending parenthesis and spaces -- spaces after parenthesis ) ))  
+^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+Invalid string
+
+error      => |"un-terminated string with ending parenthesis and spaces -- spaces after parenthesis )|
+)          => |)|
+)          => |)|
+eol       
+id         => |ID|
+
+Error line 6:
+ID# Comment
+  ^~~~~~~~^
+Comment must be preceded by white space
+
+eol       
+
+Error line 7:
+$"un-terminated istring )) 
+^~~~~~~~~~~~~~~~~~~~~~^
+Invalid string
+
+error      => |$"un-terminated istring|
+)          => |)|
+)          => |)|
+eol       
+
+Error line 8:
+$"istring with $" after
+^~~~~~~~~~~~~~~~^
+Invalid string
+
+error      => |$"istring with $"|
+id         => |after|
+eol       
+
+Error line 9:
+$"begin with $ $( after
+^~~~~~~~~~~~~~~~^
+Invalid string
+
+error      => |$"begin with $ $(|
+id         => |after|
+eol       
+
+Error line 10:
+)$ un-terminated cont
+^~~~~~~~~~~~~~~~~~~~^
+Invalid string
+
+error      => |)$ un-terminated cont|
+eol       
+
+Error line 11:
+)$ un-terminated cont $
+^~~~~~~~~~~~~~~~~~~~~~^
+Invalid string
+
+error      => |)$ un-terminated cont $|
+eol       
+
+Error line 12:
+)$ cont with $ " after
+^~~~~~~~~~~~~~~^
+Invalid string
+
+error      => |)$ cont with $ "|
+id         => |after|
+eol       
+
+Error line 13:
+)$ cont with $ $( after
+^~~~~~~~~~~~~~~~^
+Invalid string
+
+error      => |)$ cont with $ $(|
+id         => |after|
+eol       
+
+Error line 14:
+Prefixed"string"
+^~~~~~~~~~~~~~~^
+Invalid string
+
+error      => |Prefixed"string"|
+eol       
+
+Error line 15:
+"string"postfixed
+^~~~~~~~~~~~~~~~^
+Invalid string
+
+error      => |"string"postfixed|
+eol       
+
+Error line 16:
+Prefixed"string $( after
+^~~~~~~~~~~~~~~~~^
+Invalid string
+
+error      => |Prefixed"string $(|
+id         => |after|
+eol       
+
+Error line 17:
+12"string"
+^~~~~~~~~^
+Invalid string
+
+error      => |12"string"|
+eol       
+
+Error line 18:
+"string"12
+^~~~~~~~~^
+Invalid string
+
+error      => |"string"12|
+eol       
