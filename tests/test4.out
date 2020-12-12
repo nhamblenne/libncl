@@ -8,268 +8,269 @@ Error line 6:
 .b
  ^
 ('b': id) parsing restarted here
-ASSIGN
-    IDENT exp
-  :=
-    NUMBER 36
-ASSIGN
-    IDENT exp
-  :=
-    NUMBER 42
-ASSIGN
-    IDENT exp
-  :=
-    NUMBER 96
-ASSIGN
-    IDENT exp
-  :=
-    NUMBER 102
-ASSIGN
-    IDENT exp
-  :=
-    IDENT ab
-ASSIGN
-    IDENT exp
-  :=
-    IDENT $foo
-CALL
-    IDENT $
-ASSIGN
-    IDENT exp
-  :=
-    STRING "toto"
-ASSIGN
-    IDENT exp
-  :=
-    IDENT a
-ASSIGN
-    IDENT exp
-  :=
-    IDENT a
-ASSIGN
-    IDENT exp
-  :=
-    FIELD c OF
+LIST
+    ASSIGN
+        IDENT exp
+      :=
+        NUMBER 36
+    ASSIGN
+        IDENT exp
+      :=
+        NUMBER 42
+    ASSIGN
+        IDENT exp
+      :=
+        NUMBER 96
+    ASSIGN
+        IDENT exp
+      :=
+        NUMBER 102
+    ASSIGN
+        IDENT exp
+      :=
+        IDENT ab
+    ASSIGN
+        IDENT exp
+      :=
+        IDENT $foo
+    CALL
+        IDENT $
+    ASSIGN
+        IDENT exp
+      :=
+        STRING "toto"
+    ASSIGN
+        IDENT exp
+      :=
         IDENT a
-ASSIGN
-    IDENT exp
-  :=
-    FIELD x OF
+    ASSIGN
+        IDENT exp
+      :=
+        IDENT a
+    ASSIGN
+        IDENT exp
+      :=
         FIELD c OF
             IDENT a
-ASSIGN
-    IDENT exp
-  :=
-    CALL1
-        IDENT sin
-        IDENT x
-ASSIGN
-    IDENT exp
-  :=
-    CALL1
-        IDENT sin
-        CALL
-            IDENT x
-            NUMBER 2
-ASSIGN
-    IDENT exp
-  :=
-    CALL
-        IDENT x
+    ASSIGN
+        IDENT exp
+      :=
+        FIELD x OF
+            FIELD c OF
+                IDENT a
+    ASSIGN
+        IDENT exp
+      :=
         CALL1
             IDENT sin
-            IDENT y
-ASSIGN
-    IDENT exp
-  :=
-    CALL1
-        IDENT sin
-        CALL1
-            IDENT cos
             IDENT x
-ASSIGN
-    IDENT exp
-  :=
-    CALL
-        IDENT a
-ASSIGN
-    IDENT exp
-  :=
-    CALL
-        IDENT a
-        IDENT b
-ASSIGN
-    IDENT exp
-  :=
-    CALL
-        IDENT a
-        IDENT b
-        IDENT c
-ASSIGN
-    IDENT exp
-  :=
-    CALL
-        IDENT a
-        FIELD c OF
-            IDENT b
-        CALL
-            IDENT f
-ASSIGN
-    IDENT exp
-  :=
-    OPER +
-        IDENT a
-ASSIGN
-    IDENT exp
-  :=
-    OPER -
-        IDENT b
-ASSIGN
-    IDENT exp
-  :=
-    CALL
-        IDENT sin
-        OPER -
-            IDENT x
-ASSIGN
-    IDENT exp
-  :=
-    OPER +
-        OPER +
-            OPER -
-                IDENT a
-ASSIGN
-    IDENT exp
-  :=
-    OPER +
+    ASSIGN
+        IDENT exp
+      :=
         CALL1
-            IDENT f
-            IDENT g
-ASSIGN
-    IDENT exp
-  :=
-    CALL1
-        OPER +
-            IDENT f
-        IDENT g
-ASSIGN
-    IDENT exp
-  :=
-    IDENT a
-CALL
-    IDENT b
-ASSIGN
-    IDENT exp
-  :=
-    FIELD b OF
-        IDENT a
-ASSIGN
-    IDENT exp
-  :=
-    OPER mod
-        IDENT a
-        OPER +
-            IDENT e
-ASSIGN
-    IDENT exp
-  :=
-    OPER *
-        OPER rem
-            OPER mod
-                OPER div
-                    OPER /
-                        OPER *
-                            CALL1
-                                IDENT sin
-                                IDENT a
-                            IDENT b
-                        IDENT c
-                    IDENT d
-                OPER +
-                    IDENT e
+            IDENT sin
             CALL
                 IDENT x
-                IDENT x
-        CALL1
-            IDENT cos
-            IDENT y
-ASSIGN
-    IDENT exp
-  :=
-    OPER +
-        OPER +
-            IDENT a
-            OPER *
-                IDENT b
-                IDENT a
-        IDENT b
-ASSIGN
-    IDENT exp
-  :=
-    OPER *
-        OPER +
-            IDENT a
-            IDENT b
-        OPER +
-            IDENT a
-            IDENT b
-ASSIGN
-    IDENT exp
-  :=
-    OPER +
-        OPER +
-            OPER *
-                IDENT a
-                IDENT a
-            OPER *
-                OPER *
-                    NUMBER 2
-                    IDENT a
-                IDENT b
-        OPER *
-            IDENT b
-            IDENT b
-ASSIGN
-    IDENT exp
-  :=
-    OPER ==
-        OPER <
-            OPER *
-                CALL1
-                    IDENT sin
-                    IDENT x
-                IDENT k
-            OPER +
-                IDENT a
-                CALL1
-                    IDENT cos
-                    IDENT theta
+                NUMBER 2
+    ASSIGN
+        IDENT exp
+      :=
         CALL
-            IDENT foo
-            IDENT bar
-            OPER +
-                IDENT a
+            IDENT x
+            CALL1
+                IDENT sin
+                IDENT y
+    ASSIGN
+        IDENT exp
+      :=
+        CALL1
+            IDENT sin
+            CALL1
+                IDENT cos
+                IDENT x
+    ASSIGN
+        IDENT exp
+      :=
+        CALL
+            IDENT a
+    ASSIGN
+        IDENT exp
+      :=
+        CALL
+            IDENT a
+            IDENT b
+    ASSIGN
+        IDENT exp
+      :=
+        CALL
+            IDENT a
+            IDENT b
+            IDENT c
+    ASSIGN
+        IDENT exp
+      :=
+        CALL
+            IDENT a
+            FIELD c OF
                 IDENT b
-ASSIGN
-    IDENT exp
-  :=
-    OPER not
-        OPER ==
-            OPER <
+            CALL
+                IDENT f
+    ASSIGN
+        IDENT exp
+      :=
+        OPER +
+            IDENT a
+    ASSIGN
+        IDENT exp
+      :=
+        OPER -
+            IDENT b
+    ASSIGN
+        IDENT exp
+      :=
+        CALL
+            IDENT sin
+            OPER -
+                IDENT x
+    ASSIGN
+        IDENT exp
+      :=
+        OPER +
+            OPER +
+                OPER -
+                    IDENT a
+    ASSIGN
+        IDENT exp
+      :=
+        OPER +
+            CALL1
+                IDENT f
+                IDENT g
+    ASSIGN
+        IDENT exp
+      :=
+        CALL1
+            OPER +
+                IDENT f
+            IDENT g
+    ASSIGN
+        IDENT exp
+      :=
+        IDENT a
+    CALL
+        IDENT b
+    ASSIGN
+        IDENT exp
+      :=
+        FIELD b OF
+            IDENT a
+    ASSIGN
+        IDENT exp
+      :=
+        OPER mod
+            IDENT a
+            OPER +
+                IDENT e
+    ASSIGN
+        IDENT exp
+      :=
+        OPER *
+            OPER rem
+                OPER mod
+                    OPER div
+                        OPER /
+                            OPER *
+                                CALL1
+                                    IDENT sin
+                                    IDENT a
+                                IDENT b
+                            IDENT c
+                        IDENT d
+                    OPER +
+                        IDENT e
+                CALL
+                    IDENT x
+                    IDENT x
+            CALL1
+                IDENT cos
+                IDENT y
+    ASSIGN
+        IDENT exp
+      :=
+        OPER +
+            OPER +
                 IDENT a
                 OPER *
                     IDENT b
-                    IDENT c
-            IDENT d
-ASSIGN
-    IDENT exp
-  :=
-    OPER or
-        OPER and
-            OPER not
+                    IDENT a
+            IDENT b
+    ASSIGN
+        IDENT exp
+      :=
+        OPER *
+            OPER +
                 IDENT a
-            OPER not
                 IDENT b
+            OPER +
+                IDENT a
+                IDENT b
+    ASSIGN
+        IDENT exp
+      :=
+        OPER +
+            OPER +
+                OPER *
+                    IDENT a
+                    IDENT a
+                OPER *
+                    OPER *
+                        NUMBER 2
+                        IDENT a
+                    IDENT b
+            OPER *
+                IDENT b
+                IDENT b
+    ASSIGN
+        IDENT exp
+      :=
         OPER ==
-            IDENT c
-            IDENT d
+            OPER <
+                OPER *
+                    CALL1
+                        IDENT sin
+                        IDENT x
+                    IDENT k
+                OPER +
+                    IDENT a
+                    CALL1
+                        IDENT cos
+                        IDENT theta
+            CALL
+                IDENT foo
+                IDENT bar
+                OPER +
+                    IDENT a
+                    IDENT b
+    ASSIGN
+        IDENT exp
+      :=
+        OPER not
+            OPER ==
+                OPER <
+                    IDENT a
+                    OPER *
+                        IDENT b
+                        IDENT c
+                IDENT d
+    ASSIGN
+        IDENT exp
+      :=
+        OPER or
+            OPER and
+                OPER not
+                    IDENT a
+                OPER not
+                    IDENT b
+            OPER ==
+                IDENT c
+                IDENT d

@@ -47,11 +47,9 @@ LIST
     RETURN
     PASS
     ASSIGN
-        LIST
-            IDENT a
+        IDENT a
       :=
-        LIST
-            IDENT b
+        IDENT b
     ASSIGN
         LIST
             IDENT a
@@ -105,11 +103,9 @@ LIST
             IDENT d
       THEN
         ASSIGN
-            LIST
-                IDENT a
+            IDENT a
           :=
-            LIST
-                IDENT b
+            IDENT b
       ELSE
         <!!! NULL !!!>
     IF
@@ -134,38 +130,32 @@ LIST
     IF
         IDENT foo
       THEN
-        LIST
-            CALL
-                IDENT bar
+        CALL
+            IDENT bar
       ELSE
         <!!! NULL !!!>
     IF
         IDENT foo
       THEN
-        LIST
-            CALL
-                IDENT bar
+        CALL
+            IDENT bar
       ELSE
-        LIST
-            CALL
-                IDENT qux
+        CALL
+            IDENT qux
     IF
         IDENT foo
       THEN
-        LIST
-            CALL
-                IDENT bar
+        CALL
+            IDENT bar
       ELSE
         IF
             IDENT cond
           THEN
-            LIST
-                CALL
-                    IDENT foo
+            CALL
+                IDENT foo
           ELSE
-            LIST
-                CALL
-                    IDENT qux
+            CALL
+                IDENT qux
     LIST
         CALL
             IDENT foo
@@ -185,31 +175,25 @@ LIST
         CALL
             IDENT a
         ASSIGN
-            LIST
-                IDENT b
+            IDENT b
           :=
-            LIST
-                IDENT x
+            IDENT x
     WHILE
         IDENT cond
       LOOP
         LIST
             ASSIGN
-                LIST
+                IDENT x
+              :=
+                OPER +
                     IDENT x
-              :=
-                LIST
-                    OPER +
-                        IDENT x
-                        NUMBER 1
+                    NUMBER 1
             ASSIGN
-                LIST
-                    IDENT y
+                IDENT y
               :=
-                LIST
-                    OPER -
-                        IDENT y
-                        NUMBER 1
+                OPER -
+                    IDENT y
+                    NUMBER 1
     FOR
         IDENT id
       IN
@@ -222,13 +206,11 @@ LIST
                 IDENT print
                 IDENT id
             ASSIGN
-                LIST
-                    IDENT x
+                IDENT x
               :=
-                LIST
-                    OPER +
-                        IDENT x
-                        NUMBER 1
+                OPER +
+                    IDENT x
+                    NUMBER 1
     LABEL lo
     LOOP
         CALL
@@ -248,8 +230,7 @@ LIST
         IDENT apply
         IDENT array
         LAMBDA FUNC
-            LIST
-                IDENT x
+            IDENT x
           RESULT
             OPER +
                 IDENT x
