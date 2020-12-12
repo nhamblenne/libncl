@@ -13,6 +13,8 @@ set(CMAKE_C_EXTENSIONS OFF)
 set(CMAKE_DEBUG_POSTFIX _g)
 
 option(DevMode "Development mode" OFF)
+option(TEST_LIBNCL "Testing libncl" OFF)
+
 string(REGEX REPLACE "(.*)/[^/]*" "\\1" DEV_ROOT "${PROJECT_SOURCE_DIR}")
 string(REGEX REPLACE ".*/([^/]*)" "\\1" PROJECT_BASE_NAME "${PROJECT_SOURCE_DIR}")
 if(DevMode)
@@ -29,6 +31,7 @@ find_package(libngc)
 set_target_properties(ngc PROPERTIES MAP_IMPORTED_CONFIG_DEBUG RELEASE)
 
 add_subdirectory(src)
-if(DevMode)
+if(TEST_LIBNCL OR CMAKE_SOURCE_DIR STREQUAL libncl_SOURCE_DIR)
+    enable_testing()
     add_subdirectory(tests)
 endif()

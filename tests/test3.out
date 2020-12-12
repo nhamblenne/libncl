@@ -1,0 +1,124 @@
+4, |id1|
+4, |id2|
+7, |"string1"|
+7, |"string \" string"|
+4, |id56$__67|
+9, |$"istring$(|
+10, |)$djfkl$(|
+11, |)$dfjlk"|
+6, |123|
+6, |123.34#123E+65|
+18, |+|
+19, |-|
+5, |+-|
+14, |(|
+15, |)|
+1, |(:|
+1, |:)|
+1, |[|
+1, |]|
+1, |[:|
+1, |:]|
+1, |[#|
+4, |#]|
+32, |{|
+33, |}|
+1, |{:|
+1, |:}|
+1, |{#|
+4, |#}|
+
+Error line 5:
+(# #####) (#
+          ^^
+Comment started by (# may not span several lines
+
+Error line 6:
+(# #
+^~~^
+Comment started by (# may not span several lines
+
+Error line 7:
+"Unterminated string  ))) 	
+^~~~~~~~~~~~~~~~~~~^
+Invalid string
+0, |"Unterminated string|
+15, |)|
+15, |)|
+15, |)|
+
+Error line 8:
+ A"XX" "XX"A 0ABC#16 0AB.DFE#16E+14
+ ^~~~^
+Invalid string
+0, |A"XX"|
+
+Error line 8:
+ A"XX" "XX"A 0ABC#16 0AB.DFE#16E+14
+       ^~~~^
+Invalid string
+0, |"XX"A|
+6, |0ABC#16|
+6, |0AB.DFE#16E+14|
+4, |ABC|
+
+Error line 9:
+ABC#16
+   ^~^
+Comment must be preceded by white space
+8, |$"String"|
+9, |$"String$(|
+10, |)$string$(|
+11, |)$string"|
+
+Error line 11:
+$"string"A )$string"X
+^~~~~~~~~^
+Invalid string
+0, |$"string"A|
+
+Error line 11:
+$"string"A )$string"X
+           ^~~~~~~~~^
+Invalid string
+0, |)$string"X|
+7, |"string with $"|
+
+Error line 12:
+"string with $" $"istring with $" $"istring with $ $( )$istring with $ $( )$ istring with $"
+                ^~~~~~~~~~~~~~~~^
+Invalid string
+0, |$"istring with $"|
+
+Error line 12:
+"string with $" $"istring with $" $"istring with $ $( )$istring with $ $( )$ istring with $"
+                                  ^~~~~~~~~~~~~~~~~~^
+Invalid string
+0, |$"istring with $ $(|
+
+Error line 12:
+"string with $" $"istring with $" $"istring with $ $( )$istring with $ $( )$ istring with $"
+                                                      ^~~~~~~~~~~~~~~~~~^
+Invalid string
+0, |)$istring with $ $(|
+
+Error line 12:
+"string with $" $"istring with $" $"istring with $ $( )$istring with $ $( )$ istring with $"
+                                                                          ^~~~~~~~~~~~~~~~~^
+Invalid string
+0, |)$ istring with $"|
+7, |"$("|
+
+Error line 14:
+ 12.45#ABE+5"Foo"\\ string
+ ^~~~~~~~~~~~~~~^
+Invalid string
+0, |12.45#ABE+5"Foo"|
+12, |\\ string|
+12, |\\ string|
+4, |a|
+16, |.|
+4, |c|
+4, |a|
+16, |.|
+4, |c|

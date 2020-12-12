@@ -79,8 +79,9 @@ void show_node(int indent, ncl_node *top)
                 show_node(indent + 4, top->assign.what);
                 break;
             case ncl_list_node:
+                printf("%*sLIST\n", indent, "");
                 for (ncl_node *cur = top; cur != NULL; cur = cur->list.tail) {
-                    show_node(indent, cur->list.head);
+                    show_node(indent+4, cur->list.head);
                 }
                 break;
             case ncl_cond_node:
@@ -150,8 +151,8 @@ int main() {
                        "lo: loop a(x); exit lo when foo; b(y); end\n"
                        "apply array, { x => x + 2 }\n"
                        "foreach array, { x, y do\n"
-                       "foo x\n"
-                       "bar y\n"
+                       "   foo x\n"
+                       "   bar y\n"
                        "}\n"
     );
     show_node(0, result.top);

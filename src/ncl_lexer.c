@@ -93,7 +93,7 @@ static unsigned short charClass[] = {
         // DLE   DC1     DC2     DC3     DC4     NAK     SYN     ETB     CAN      EM     SUB     ESC      FS      GS      RS      US
         0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
         // SPC    !        "      #       $       %       &       '       (       )       *       +       ,       -       .       /
-        0x0081, 0x0090, 0x0000, 0x00C0, 0x0088, 0x0090, 0x0090, 0x0080, 0x0080, 0x0080, 0x0090, 0x0090, 0x0080, 0x0090, 0x0040, 0x0090,
+        0x0081, 0x0090, 0x0000, 0x00C0, 0x0008, 0x0090, 0x0090, 0x0080, 0x0080, 0x0080, 0x0090, 0x0090, 0x0080, 0x0090, 0x0040, 0x0090,
         // 0      1       2       3       4       5       6       7       8       9       :       ;       <       =       >       ?
         0x00A0, 0x00A0, 0x00A0, 0x00A0, 0x00A0, 0x00A0, 0x00A0, 0x00A0, 0x00A0, 0x00A0, 0x0080, 0x0080, 0x0090, 0x0090, 0x0090, 0x0080,
         // @      A       B       C       D       E       F       G       H       I       J       K       L       M       N       O
@@ -187,7 +187,7 @@ static struct { char const* name; ncl_token_kind kind; } keywords[] = {
         { "not",    ncl_not_kw },
         { "or",     ncl_or_kw },
         { "pass",   ncl_pass_kw },
-        { "rem",    ncl_mod_kw },
+        { "rem",    ncl_rem_kw },
         { "return", ncl_return_kw },
         { "then",   ncl_then_kw },
         { "unless", ncl_unless_kw },
@@ -473,7 +473,7 @@ start:;
                     ++cur;
                 } else {
                     lexer->current_end = cur;
-                    lexer->error_func(lexer, "Comment started bu (# may not span several lines");
+                    lexer->error_func(lexer, "Comment started by (# may not span several lines");
                 }
                 goto start;
             } else {

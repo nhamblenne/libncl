@@ -36,7 +36,7 @@ int main()
     char const text[] = " id1 id2 \"string1\" \"string \\\" string\"\n"
                         "# comment\n"
                         "id56$__67 $\"istring$( )$djfkl$( )$dfjlk\" 123 123.34#123E+65\n"
-                        "+ - +- ( ) (: :) (# #) [ ] [: :] (# #) { } {: :} {# #}\n"
+                        "+ - +- ( ) (: :) (# #) [ ] [: :] [# #] { } {: :} {# #}\n"
                         "(# #####) (#\n(# #\n"
                         "\"Unterminated string  ))) \t\n"
                         " A\"XX\" \"XX\"A 0ABC#16 0AB.DFE#16E+14\n"

@@ -1,0 +1,271 @@
+
+Error line 1:
+pass; pass x
+           ^
+('x': id) expecting semicolon
+
+Error line 2:
+next; next 45; next l;
+           ^^
+('45': number) expecting semicolon
+
+Error line 3:
+exit; exit l; exit 101
+                   ^~^
+('101': number) expecting semicolon
+
+Error line 4:
+return; return 36 + 56; return sin x; return pass
+                                             ^~~^
+('pass': pass) expecting semicolon
+LIST
+    PASS
+    PASS
+    CALL
+        IDENT x
+    NEXT
+    NEXT
+    CALL
+        NUMBER 45
+    NEXT
+        l
+    EXIT
+    EXIT
+        l
+    EXIT
+    CALL
+        NUMBER 101
+    RETURN
+    RETURN
+        OPER +
+            NUMBER 36
+            NUMBER 56
+    RETURN
+        CALL1
+            IDENT sin
+            IDENT x
+    RETURN
+    PASS
+    ASSIGN
+        LIST
+            IDENT a
+      :=
+        LIST
+            IDENT b
+    ASSIGN
+        LIST
+            IDENT a
+            IDENT b
+      :=
+        LIST
+            IDENT b
+            IDENT a
+    ASSIGN
+        LIST
+            CALL
+                IDENT a
+                NUMBER 12
+            CALL
+                IDENT b
+                NUMBER 15
+      :=
+        LIST
+            CALL1
+                IDENT sin
+                IDENT x
+            CALL1
+                IDENT cos
+                IDENT x
+    CALL
+        IDENT proc
+        IDENT a
+    CALL
+        IDENT proc
+        IDENT a
+        IDENT b
+    CALL
+        IDENT proc
+    CALL
+        IDENT proc
+        OPER +
+            IDENT a
+            IDENT b
+        OPER +
+            IDENT c
+            IDENT d
+    CALL
+        CALL
+            IDENT func
+            IDENT x
+        IDENT a
+        IDENT b
+    IF
+        OPER ==
+            IDENT x
+            IDENT d
+      THEN
+        ASSIGN
+            LIST
+                IDENT a
+          :=
+            LIST
+                IDENT b
+      ELSE
+        <!!! NULL !!!>
+    IF
+        OPER not
+            IDENT precond
+      THEN
+        RETURN
+      ELSE
+        <!!! NULL !!!>
+    IF
+        CALL
+            IDENT foo
+            IDENT y
+      THEN
+        <!!! NULL !!!>
+      ELSE
+        CALL
+            IDENT proc
+            IDENT a
+            IDENT b
+            IDENT c
+    IF
+        IDENT foo
+      THEN
+        LIST
+            CALL
+                IDENT bar
+      ELSE
+        <!!! NULL !!!>
+    IF
+        IDENT foo
+      THEN
+        LIST
+            CALL
+                IDENT bar
+      ELSE
+        LIST
+            CALL
+                IDENT qux
+    IF
+        IDENT foo
+      THEN
+        LIST
+            CALL
+                IDENT bar
+      ELSE
+        IF
+            IDENT cond
+          THEN
+            LIST
+                CALL
+                    IDENT foo
+          ELSE
+            LIST
+                CALL
+                    IDENT qux
+    LIST
+        CALL
+            IDENT foo
+        CALL
+            IDENT bar
+        IF
+            IDENT foo
+          THEN
+            LIST
+                CALL
+                    IDENT bar
+                CALL
+                    IDENT qux
+          ELSE
+            <!!! NULL !!!>
+    LOOP
+        CALL
+            IDENT a
+        ASSIGN
+            LIST
+                IDENT b
+          :=
+            LIST
+                IDENT x
+    WHILE
+        IDENT cond
+      LOOP
+        LIST
+            ASSIGN
+                LIST
+                    IDENT x
+              :=
+                LIST
+                    OPER +
+                        IDENT x
+                        NUMBER 1
+            ASSIGN
+                LIST
+                    IDENT y
+              :=
+                LIST
+                    OPER -
+                        IDENT y
+                        NUMBER 1
+    FOR
+        IDENT id
+      IN
+        CALL
+            IDENT keys
+            IDENT foo
+      LOOP
+        LIST
+            CALL
+                IDENT print
+                IDENT id
+            ASSIGN
+                LIST
+                    IDENT x
+              :=
+                LIST
+                    OPER +
+                        IDENT x
+                        NUMBER 1
+    LABEL lo
+    LOOP
+        CALL
+            IDENT a
+            IDENT x
+        IF
+            IDENT foo
+          THEN
+            EXIT
+                lo
+          ELSE
+            <!!! NULL !!!>
+        CALL
+            IDENT b
+            IDENT y
+    CALL
+        IDENT apply
+        IDENT array
+        LAMBDA FUNC
+            LIST
+                IDENT x
+          RESULT
+            OPER +
+                IDENT x
+                NUMBER 2
+    CALL
+        IDENT foreach
+        IDENT array
+        LAMBDA PROC
+            LIST
+                IDENT x
+                IDENT y
+          RESULT
+            LIST
+                CALL
+                    IDENT foo
+                    IDENT x
+                CALL
+                    IDENT bar
+                    IDENT y
