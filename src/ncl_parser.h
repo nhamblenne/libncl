@@ -1,6 +1,8 @@
 #ifndef LIBNCL_NCL_PARSER_H
 #define LIBNCL_NCL_PARSER_H
 
+#include <stdlib.h>
+
 #include "ncl_lexer.h"
 
 /* =======================================================================
@@ -134,7 +136,7 @@ typedef struct ncl_parse_result {
     ncl_node *top;
 } ncl_parse_result;
 
-ncl_parse_result ncl_parse(char const*);
+ncl_parse_result ncl_parse(char const *current, size_t size);
 void ncl_free_node(ncl_node*);
 
 #endif

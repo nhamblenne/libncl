@@ -28,8 +28,8 @@ int main() {
                           "exp := a + b * a + b;exp :=  (a + b) * (a + b);exp :=  a*a + 2*a*b + b*b;"
                           "exp := sin x * k < a + cos theta == foo(bar, a+b);\n"
                        "exp := not a < b*c == d;"
-                          "exp := not a and not b or c == d;"
-                       );
+                           "exp := not a and not b or c == d;",
+                       0);
     show_node(0, result.top);
     ncl_free_node(result.top);
 }

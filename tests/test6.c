@@ -4,8 +4,6 @@
  * =======================================================================
  */
 
-#include <stdio.h>
-
 #include "ncl_parser.h"
 #include "node-dumper.h"
 
@@ -24,8 +22,18 @@ int main() {
                        "if foo then bar; end\n"
                        "if foo then bar; else qux; end\n"
                        "if foo then bar; elsif cond then foo; else qux; end\n"
-                       "begin foo\nbar\nif foo then bar\nqux\nend\nend\n"
-                       "loop\na\nb := x;end\n"
+                       "begin\n"
+                       "   foo\n"
+                       "   bar\n"
+                       "   if foo then\n"
+                       "       bar\n"
+                       "       qux\n"
+                       "   end\n"
+                       "end\n"
+                       "loop\n"
+                       "   a\n"
+                       "   b := x\n"
+                       "end\n"
                        "while cond loop x := x + 1; y := y - 1; end\n"
                        "for id in keys(foo) loop print id; x := x + 1; end\n"
                        "lo: loop a(x); exit lo when foo; b(y); end\n"
@@ -33,8 +41,8 @@ int main() {
                        "foreach array, { x, y do\n"
                        "   foo x\n"
                        "   bar y\n"
-                       "}\n"
-    );
+                       "}\n",
+                       0);
     show_node(0, result.top);
     ncl_free_node(result.top);
 }

@@ -10,6 +10,7 @@
 #include <string.h>
 
 #include "ncl_lexer.h"
+#include "file-reader.h"
 
 void error_func(ncl_lexer *lexer, char const *msg)
 {
@@ -38,46 +39,27 @@ void error_func(ncl_lexer *lexer, char const *msg)
 int main(int argc, char* argv[])
 {
     int status = EXIT_SUCCESS;
-    size_t size = 1;
-    char* buffer = malloc(size);
+    size_t buffer_size = 1024;
+    char* buffer = malloc(buffer_size);
     if (buffer == NULL) {
         fprintf(stderr, "Unable to allocate read buffer.\n");
         return EXIT_FAILURE;
     }
     bool skip_eol = false;
-    int start_arg = 1;
     if (argc > 1) {
         skip_eol = strcmp(argv[1], "-skip-eol") == 0;
     }
     for (int i = 1 + skip_eol; i < argc; ++i) {
-        errno = 0;
-        FILE *f = fopen(argv[i], "r");
-        if (f == NULL) {
-            int err = errno;
-            fprintf(stderr, "Unable to open %s: %s\n", argv[i], strerror(err));
+        size_t file_size;
+        if (read_file(argv[i], &buffer, &buffer_size, &file_size) == EXIT_FAILURE) {
             status = EXIT_FAILURE;
             continue;
         }
-        size_t nread;
-        size_t end = 0;
-        while (nread = fread(buffer + end, 1, size - end, f), nread > 0) {
-            end += nread;
-            if (end == size) {
-                char* new_buffer = realloc(buffer,2*size);
-                if (new_buffer == NULL) {
-                    fprintf(stderr, "Unable to increase read buffer's size.\n");
-                    return EXIT_FAILURE;
-                }
-                buffer = new_buffer;
-                size += size;
-            }
-        }
-
         ncl_token_kind tk;
         ncl_lexer lexer;
         lexer.buffer_start = buffer;
         lexer.buffer_pos = buffer;
-        lexer.buffer_end = buffer + end;
+        lexer.buffer_end = buffer + file_size;
         lexer.line_number = 1;
         lexer.error_func = error_func;
         while (tk = ncl_lex(&lexer, skip_eol), tk != ncl_eof_tk) {

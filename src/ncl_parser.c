@@ -974,15 +974,18 @@ static ncl_parse_result parse_statements(ncl_lexer *lexer, ncl_symset valid, ncl
     return result;
 }
 
-ncl_parse_result ncl_parse(char const *current)
+ncl_parse_result ncl_parse(char const *current, size_t size)
 {
     if (!dynamic_initialization_done) {
         dynamic_initialization();
     }
+    if (size == 0) {
+        size = strlen(current);
+    }
     ncl_lexer lexer;
     lexer.buffer_start = current;
     lexer.buffer_pos = current;
-    lexer.buffer_end = current + strlen(current);
+    lexer.buffer_end = current + size;
     lexer.line_number = 1;
     lexer.error_func = error_func;
     ncl_lex(&lexer, false);
@@ -995,6 +998,9 @@ ncl_parse_result ncl_parse(char const *current)
 
 void ncl_free_node(ncl_node *top)
 {
+    if (top == NULL) {
+        return;
+    }
     switch (top->kind) {
         case ncl_error_node:
         case ncl_number_node:
@@ -1007,9 +1013,7 @@ void ncl_free_node(ncl_node *top)
         case ncl_call_node:
         case ncl_call1_node:
             ncl_free_node(top->call.func);
-            if (top->call.args != NULL) {
-                ncl_free_node(top->call.args);
-            }
+            ncl_free_node(top->call.args);
             break;
         case ncl_unary_node:
             ncl_free_node(top->unary.arg);
