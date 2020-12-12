@@ -107,7 +107,7 @@ typedef struct ncl_node_lambda_exp {
 
 struct ncl_node {
     ncl_node_kind kind;
-    union {
+    union ncl_node_dispatch {
         ncl_node_list list;
         ncl_node_token_exp token;
         ncl_node_field_exp field;
@@ -121,7 +121,7 @@ struct ncl_node {
         ncl_node_while_stmt while_stmt;
         ncl_node_for_stmt for_stmt;
         ncl_node_lambda_exp lambda;
-    };
+    } u;
 };
 
 typedef enum ncl_parse_result_enum {

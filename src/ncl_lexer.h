@@ -72,7 +72,7 @@ typedef enum ncl_token_kind {
     ncl_last_tk
 } ncl_token_kind;
 
-char const* const ncl_token_names[ncl_last_tk+1];
+extern char const* const ncl_token_names[ncl_last_tk+1];
 
 typedef struct ncl_lexer ncl_lexer;
 typedef void (*ncl_lexer_error_func)(ncl_lexer*, char const*);

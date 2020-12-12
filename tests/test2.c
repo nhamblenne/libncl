@@ -5,6 +5,7 @@
  */
 
 #define _POSIX_C_SOURCE 200809L
+#undef NDEBUG
 
 #include <string.h>
 #include <assert.h>
@@ -15,7 +16,6 @@ uintptr_t hash(void const* elt)
 {
     uintptr_t const factor = -59LLU; // largest prime less than 2^64
     uintptr_t const offset = -83LLU; // another big prime less than 2^64
-    unsigned char const* str = elt;
     uintptr_t result = 0;
     for (unsigned char const *str = elt; *str != '\0'; ++str) {
         result = (result + *str) * factor ^ offset;
@@ -45,19 +45,19 @@ int main()
     ncl_hash_remove(&table, "true");
     assert(ncl_hash_get(&table, "true") == NULL);
     for (int i = 0; i < 200; ++i) {
-        char key[20];
-        sprintf(key, "%d", i);
-        ncl_hash_add(&table, strdup(key));
+        char skey[20];
+        sprintf(skey, "%d", i);
+        ncl_hash_add(&table, strdup(skey));
     }
     for (int i = 0; i < 200; ++i) {
-        char key[20];
-        sprintf(key, "%d", i);
-        assert(ncl_hash_get(&table, key) != NULL);
+        char skey[20];
+        sprintf(skey, "%d", i);
+        assert(ncl_hash_get(&table, skey) != NULL);
     }
     for (int i = 0; i < 120; ++i) {
-        char key[20];
-        sprintf(key, "%d", i);
-        ncl_hash_remove(&table, key);
+        char skey[20];
+        sprintf(skey, "%d", i);
+        ncl_hash_remove(&table, skey);
         for (int j = i+1; j < 200; ++j) {
             char key2[20];
             sprintf(key2, "%d", j);
@@ -65,16 +65,16 @@ int main()
         }
     }
     for (int i = 0; i < 120; ++i) {
-        char key[20];
-        sprintf(key, "%d", i);
-        assert(ncl_hash_get(&table, key) == NULL);
+        char skey[20];
+        sprintf(skey, "%d", i);
+        assert(ncl_hash_get(&table, skey) == NULL);
     }
     for (int i = 120; i < 200; ++i) {
-        char key[20];
-        sprintf(key, "%d", i);
-        assert(ncl_hash_get(&table, key) != NULL);
-        ncl_hash_remove(&table, key);
-        assert(ncl_hash_get(&table, key) == NULL);
+        char skey[20];
+        sprintf(skey, "%d", i);
+        assert(ncl_hash_get(&table, skey) != NULL);
+        ncl_hash_remove(&table, skey);
+        assert(ncl_hash_get(&table, skey) == NULL);
         for (int j = i+1; j < 200; ++j) {
             char key2[20];
             sprintf(key2, "%d", j);

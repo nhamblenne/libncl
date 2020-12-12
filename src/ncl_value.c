@@ -29,8 +29,9 @@ bool ncl_get_bool_value(ncl_value value)
     return (value.repr >> 4U) != 0;
 }
 
-ncl_value ncl_make_bool(ncl_interp* interp, bool value)
+ncl_value ncl_make_bool(ncl_interp *interp, bool value)
 {
+    (void)interp;
     return (ncl_value){(uintptr_t)((value ? 0x10U : 0U) | ncl_bool_type)};
 }
 
@@ -41,7 +42,8 @@ intptr_t ncl_get_int_value(ncl_value value)
 
 ncl_value ncl_make_int(ncl_interp* interp, intptr_t value)
 {
-    return (ncl_value){((value << 4) | ncl_int_type)};
+    (void)interp;
+    return (ncl_value){(((uintptr_t)value << 4) | ncl_int_type)};
 }
 
 char const* ncl_get_symbol_name(ncl_value value)
@@ -67,6 +69,7 @@ char const* ncl_get_string_value(ncl_value value)
 
 ncl_value ncl_make_string(ncl_interp* interp, char const *value)
 {
+    (void)interp;
     assert((((uintptr_t) value) & 0xF) == 0);
     return (ncl_value){(((uintptr_t)value) | ncl_string_type)};
 }

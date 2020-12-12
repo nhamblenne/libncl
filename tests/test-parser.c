@@ -22,7 +22,6 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
     bool skip_eol = false;
-    int start_arg = 1;
     if (argc > 1) {
         skip_eol = strcmp(argv[1], "-skip-eol") == 0;
     }

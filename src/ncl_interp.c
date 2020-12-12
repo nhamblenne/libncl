@@ -14,7 +14,6 @@ static uintptr_t symbol_hash(void const* elt)
 {
     uintptr_t const factor = -59LLU; // largest prime less than 2^64
     uintptr_t const offset = -83LLU; // another big prime less than 2^64
-    unsigned char const* str = elt;
     uintptr_t result = 0;
     for (unsigned char const *str = elt; *str != '\0'; ++str) {
         result = (result + *str) * factor ^ offset;
@@ -38,7 +37,7 @@ ncl_interp *ncl_init_interp()
 
 void ncl_free_interp(ncl_interp *interp)
 {
-    for (int i = 0; i < interp->symbols.allocated; ++i) {
+    for (unsigned i = 0; i < interp->symbols.allocated; ++i) {
         if (interp->symbols.content[i] != NULL && interp->symbols.content[i] != NCL_DELETED_ENTRY) {
             free(interp->symbols.content[i]);
         }

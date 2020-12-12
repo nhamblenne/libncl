@@ -7,7 +7,7 @@
  * =======================================================================
  */
 
-typedef struct ncl_node ncl_node;
-void show_node(int indent, ncl_node *top);
+struct ncl_node;
+void show_node(int indent, struct ncl_node *top);
 
 #endif

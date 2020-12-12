@@ -12,7 +12,6 @@
 #include <string.h>
 
 int read_file(char const *name, char **buffer, size_t *size, size_t *file_size) {
-    int status = EXIT_SUCCESS;
     errno = 0;
     FILE *f = fopen(name, "r");
     if (f == NULL) {
