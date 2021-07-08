@@ -14,6 +14,7 @@ set(CMAKE_DEBUG_POSTFIX _g)
 
 option(DevMode "Development mode" OFF)
 option(TEST_LIBNCL "Testing libncl" OFF)
+option(FETCH_LIBNGC "Force fetching libngc" OFF)
 
 string(REGEX REPLACE "(.*)/[^/]*" "\\1" DEV_ROOT "${PROJECT_SOURCE_DIR}")
 string(REGEX REPLACE ".*/([^/]*)" "\\1" PROJECT_BASE_NAME "${PROJECT_SOURCE_DIR}")
@@ -31,7 +32,9 @@ list(INSERT CMAKE_PREFIX_PATH 0 "${CMAKE_INSTALL_PREFIX}")
 
 include(FetchContent)
 
-find_package(libngc QUIET)
+if(NOT FETCH_LIBNGC)
+  find_package(libngc QUIET)
+endif()
 if(libngc_FOUND)
     set_target_properties(ngc PROPERTIES MAP_IMPORTED_CONFIG_DEBUG RELEASE)
 else()
