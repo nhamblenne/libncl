@@ -41,5 +41,5 @@ jobs:
       working-directory: ${{github.workspace}}/build
       shell: bash
       run: |
-           export PATH=$GITHUB_WORKSPACE/libntt/bin:$PATH
+           export PATH=$GITHUB_WORKSPACE/ntt/bin:$PATH
            ctest -C $BUILD_TYPE
