@@ -55,8 +55,5 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
-# Keep tests
-!/tests/**/*.out
-
 # Back up files
 \#*\#
