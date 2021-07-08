@@ -29,8 +29,18 @@ else()
 endif()
 list(INSERT CMAKE_PREFIX_PATH 0 "${CMAKE_INSTALL_PREFIX}")
 
-find_package(libngc)
-set_target_properties(ngc PROPERTIES MAP_IMPORTED_CONFIG_DEBUG RELEASE)
+include(FetchContent)
+
+find_package(libngc QUIET)
+if(libngc_FOUND)
+    set_target_properties(ngc PROPERTIES MAP_IMPORTED_CONFIG_DEBUG RELEASE)
+else()
+  message("No libngc")
+  FetchContent_Declare(libngc
+    GIT_REPOSITORY https://github.com/nhamblenne/libngc
+    GIT_TAG main)
+  FetchContent_MakeAvailable(libngc)
+endif()
 
 add_subdirectory(src)
 if(TEST_LIBNCL OR CMAKE_SOURCE_DIR STREQUAL libncl_SOURCE_DIR)
