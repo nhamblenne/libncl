@@ -1,3 +1,5 @@
+![Build and tests](https://github.com/nhamblenne/libncl/actions/workflows/CMake.yml/badge.svg)
+
 # NIH Command Language - Library
 
 This is the library implementing NIH Command Language. `ncl` is designed to
