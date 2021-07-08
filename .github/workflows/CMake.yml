@@ -42,4 +42,4 @@ jobs:
       shell: bash
       run: |
            export PATH=$GITHUB_WORKSPACE/ntt/bin:$PATH
-           ctest -C $BUILD_TYPE
+           ctest -V -C $BUILD_TYPE
