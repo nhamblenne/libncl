@@ -30,7 +30,7 @@ jobs:
     - name: Configure CMake
       shell: bash
       working-directory: ${{github.workspace}}/build
-      run: cmake $GITHUB_WORKSPACE/libngc -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DTEST_LIBNCL=ON
+      run: cmake $GITHUB_WORKSPACE/libncl -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DTEST_LIBNCL=ON
 
     - name: Build
       working-directory: ${{github.workspace}}/build
