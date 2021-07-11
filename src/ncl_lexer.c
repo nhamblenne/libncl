@@ -9,7 +9,6 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
-#include <ammintrin.h>
 #include <stddef.h>
 
 char const* const ncl_token_names[] = {
