@@ -8,19 +8,13 @@
 
 ncl_symset ncl_init_symset()
 {
-    ncl_symset result;
-    for (unsigned i = 0; i < NCL_SYMSET_SIZE; ++i) {
-        result.elem[0] = 0;
-    }
+    ncl_symset result = { 0 };
     return result;
 }
 
 ncl_symset ncl_symset_singleton(ncl_token_kind tk)
 {
-    ncl_symset result;
-    for (unsigned i = 0; i < NCL_SYMSET_SIZE; ++i) {
-        result.elem[0] = 0;
-    }
+    ncl_symset result = { 0 };
     result.elem[tk / NCL_UINTMAX_BIT_SIZE] = (uintmax_t) 1 << (tk % NCL_UINTMAX_BIT_SIZE);
     return result;
 }
