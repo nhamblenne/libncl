@@ -55,7 +55,12 @@ ncl_value ncl_make_symbol(ncl_interp* interp, char const *name)
 {
     void* result = ncl_hash_get(&interp->symbols, (void*)name);
     if (result == NULL) {
-        result = strdup(name);
+        size_t sz = strlen(name)+1;
+        result = malloc(sz + 16);
+        uintptr_t mem = (uintptr_t) result;
+        mem = (mem + 0xF) & ~(uintptr_t)0xF;
+        result = (void*) mem;
+        strcpy(result, name);
         ncl_hash_add(&interp->symbols, result);
     }
     assert((((uintptr_t) result) & 0xF) == 0);
