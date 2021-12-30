@@ -10,6 +10,9 @@ target_link_libraries(ncl PRIVATE ngc)
 target_include_directories(ncl INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
         $<INSTALL_INTERFACE:include/ncl>)
-install(TARGETS ncl EXPORT libnclConfig DESTINATION lib)
-install(FILES ${HEADERS} DESTINATION include)
-install(EXPORT libnclConfig DESTINATION lib/cmake/libncl)
+
+if(LIBNCL_INSTALL)
+    install(TARGETS ncl EXPORT libnclConfig DESTINATION lib)
+    install(FILES ${HEADERS} DESTINATION include/ncl)
+    install(EXPORT libnclConfig DESTINATION lib/cmake/libncl)
+endif()
